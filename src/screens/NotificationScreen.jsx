@@ -1,5 +1,7 @@
 import { View, Text, ScrollView, StyleSheet } from "react-native";
 
+import { colors } from "../constants/colors";
+
 export default function NotificationScreen() {
   return (
     <ScrollView style={styles.container}>
@@ -11,10 +13,10 @@ export default function NotificationScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0b0b12",
+    backgroundColor: colors.background,
   },
   title: {
-    color: "#f0eeff",
+    color: colors.text,
     fontSize: 24,
     fontWeight: "800",
     padding: 20,

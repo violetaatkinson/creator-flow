@@ -2,6 +2,7 @@ import {View, Text, ScrollView, StyleSheet, TouchableOpacity } from "react-nativ
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigationState } from "@react-navigation/native";
 
+import { colors } from "../constants/colors";
 
 export default function HomeScreen({ navigation }) {
 	return (
@@ -13,7 +14,7 @@ export default function HomeScreen({ navigation }) {
 					onPress={() => navigation.navigate("Notifications")}
 				>
 					<Ionicons 
-            name="notifications-outline" size={22} color="#b96eff" />
+            name="notifications-outline" size={22} color={colors.active} />
 				</TouchableOpacity>
 			</View>
 		</ScrollView>
@@ -21,7 +22,7 @@ export default function HomeScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-	container: { flex: 1, backgroundColor: "#0b0b12" },
+	container: { flex: 1, backgroundColor: colors.background },
 	header: {
 		flexDirection: "row",
 		justifyContent: "space-between",
@@ -29,14 +30,14 @@ const styles = StyleSheet.create({
 		padding: 20,
 		marginTop: 35,
 	},
-	title: { color: "#f0eeff", fontSize: 24, fontWeight: "800" },
+	title: { color: colors.text, fontSize: 24, fontWeight: "800" },
 	bellBtn: {
 		width: 38,
 		height: 38,
 		borderRadius: 19,
-		backgroundColor: "#1a1a28",
+		backgroundColor: colors.surface,
 		borderWidth: 1,
-		borderColor: "rgba(255,255,255,0.07)",
+		borderColor: colors.border,
 		alignItems: "center",
 		justifyContent: "center",
 	},

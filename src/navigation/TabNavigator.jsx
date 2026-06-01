@@ -1,6 +1,8 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 
+import { colors } from "../constants/colors";
+
 import HomeScreen from "../screens/HomeScreen";
 import CampaignsScreen from "../screens/CampaignsScreen";
 import FinanceScreen from "../screens/FinanceScreen";
@@ -15,14 +17,14 @@ export default function TabNavigator() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: "#111119",
-          borderTopColor: "rgba(255,255,255,0.07)",
+          backgroundColor: colors.background,
+          borderTopColor: colors.border,
           paddingTop: 10,
           paddingBottom: 10,
           height: 70,
         },
-        tabBarActiveTintColor: "#b96eff",
-        tabBarInactiveTintColor: "rgba(240,238,255,0.38)",
+        tabBarActiveTintColor: colors.active,
+        tabBarInactiveTintColor: colors.inactive,
       }}
     >
       <Tab.Screen

@@ -1,5 +1,7 @@
 import { View, Text, ScrollView, StyleSheet } from "react-native";
 
+import { colors } from "../constants/colors";
+
 export default function ProfileScreen() {
   return (
     <ScrollView style={styles.container}>
@@ -9,6 +11,6 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0b0b12" },
-  title: { color: "#f0eeff", fontSize: 24, fontWeight: "800", padding: 20,marginTop: 35 },
+  container: { flex: 1, backgroundColor: colors.background },
+  title: { color: colors.text, fontSize: 24, fontWeight: "800", padding: 20,marginTop: 35 },
 });
