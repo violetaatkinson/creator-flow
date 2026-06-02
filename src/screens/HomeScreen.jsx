@@ -22,7 +22,7 @@ export default function HomeScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-	container: { flex: 1, backgroundColor: colors.background },
+	container: { flex: 1, backgroundColor: colors.backgroundScreen },
 	header: {
 		flexDirection: "row",
 		justifyContent: "space-between",

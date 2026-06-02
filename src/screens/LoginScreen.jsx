@@ -1,5 +1,4 @@
 import { View, Text, StyleSheet } from "react-native";
-import GoogleBtn from "../components/GoogleBtn";
 import EmailBtn from "../components/EmailBtn";
 
 import { colors } from "../constants/colors";
@@ -12,7 +11,6 @@ export default function LoginScreen({navigation}) {
       </Text>
       <Text style={styles.sub}>Your influencer business, organized.</Text>
 
-      <GoogleBtn onPress={() => console.log("Google")} />
       <EmailBtn onPress={() => navigation.navigate("EmailAuth")} />
     </View>
   );
@@ -36,7 +34,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.sub,
     marginTop: 12,
-    marginBottom: 45,
+    marginBottom: 35,
     textAlign: "center",
     letterSpacing: 0.3
   },

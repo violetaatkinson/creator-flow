@@ -17,8 +17,9 @@ export default function TabNavigator() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: colors.background,
+          backgroundColor: colors.surface,
           borderTopColor: colors.border,
+          borderTopWidth: 1,
           paddingTop: 10,
           paddingBottom: 10,
           height: 70,
