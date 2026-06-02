@@ -6,6 +6,8 @@ import { View, ActivityIndicator } from "react-native";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./src/firebase/firebaseConfig";
 
+import { colors } from "../constants/colors";
+
 import TabNavigator from "./src/navigation/TabNavigator";
 import LoginScreen from "./src/screens/LoginScreen";
 import EmailAuthScreen from "./src/screens/EmailAuthScreen";
@@ -26,8 +28,8 @@ export default function App() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: "#0b0b12", alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator color="#b96eff" size="large" />
+      <View style={{ flex: 1, backgroundColor: colors.backgroundScreen, alignItems: "center", justifyContent: "center" }}>
+        <ActivityIndicator color={colors.active} size="large" />
       </View>
     );
   }
