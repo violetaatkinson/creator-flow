@@ -4,7 +4,7 @@ import EmailBtn from "../components/EmailBtn";
 
 import { colors } from "../constants/colors";
 
-export default function LoginScreen() {
+export default function LoginScreen({navigation}) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>
@@ -13,7 +13,7 @@ export default function LoginScreen() {
       <Text style={styles.sub}>Your influencer business, organized.</Text>
 
       <GoogleBtn onPress={() => console.log("Google")} />
-      <EmailBtn onPress={() => console.log("Email")} />
+      <EmailBtn onPress={() => navigation.navigate("EmailAuth")} />
     </View>
   );
 }
@@ -31,12 +31,13 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     color: "#fff",
   },
-  titleAccent: { color: colors.active },
+  titleAccent: { color: colors.active,letterSpacing: 0.5 },
   sub: {
     fontSize: 15,
     color: colors.sub,
     marginTop: 12,
     marginBottom: 45,
     textAlign: "center",
+    letterSpacing: 0.3
   },
 });

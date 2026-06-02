@@ -5,6 +5,7 @@ import { StyleSheet } from "react-native";
 
 import TabNavigator from "./src/navigation/TabNavigator";
 import LoginScreen from "./src/screens/LoginScreen";
+import EmailAuthScreen from "./src/screens/EmailAuthScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -14,6 +15,7 @@ export default function App() {
 			<StatusBar style="light" />
 			<Stack.Navigator screenOptions={{ headerShown: false }}>
 				<Stack.Screen name="Login" component={LoginScreen} />
+				<Stack.Screen name="EmailAuth" component={EmailAuthScreen} />
 				<Stack.Screen name="Main" component={TabNavigator} />
 			</Stack.Navigator>
 		</NavigationContainer>
