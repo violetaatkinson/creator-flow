@@ -6,7 +6,7 @@ import { colors } from "../constants/colors";
 export default function EmailButton({ onPress }) {
   return (
     <TouchableOpacity style={styles.btn} onPress={onPress}>
-      <Ionicons name="mail-outline" size={22} color={colors.active} />
+      <Ionicons name="mail-outline" size={22} color={colors.primary} />
       <Text style={styles.text}>Continue with Email</Text>
     </TouchableOpacity>
   );
@@ -28,7 +28,7 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.active,
+    color: colors.primary,
     letterSpacing: 0.3
   },
 });

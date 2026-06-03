@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     color: "#fff",
   },
-  titleAccent: { color: colors.active,letterSpacing: 0.5 },
+  titleAccent: { color: colors.primary,letterSpacing: 0.5 },
   sub: {
     fontSize: 15,
     color: colors.sub,

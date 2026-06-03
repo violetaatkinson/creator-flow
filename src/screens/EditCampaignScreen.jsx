@@ -1,0 +1,122 @@
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from "react-native";
+import { useState } from "react";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "../firebase/firebaseConfig";
+import { colors } from "../constants/colors";
+import FormInput from "../components/FormInput";
+import OptionSelector from "../components/OptionSelector";
+
+const TYPES = ["Post", "Reel", "Story", "Live", "Video"];
+const STATUSES = ["Pending", "Active", "Paused", "Completed"];
+
+export default function EditCampaignScreen({ navigation, route }) {
+  const { campaign } = route.params;
+
+  
+  const [brand, setBrand] = useState(campaign.brand);
+  const [type, setType] = useState(campaign.type);
+  const [date, setDate] = useState(campaign.date);
+  const [payment, setPayment] = useState(String(campaign.payment));
+  const [status, setStatus] = useState(campaign.status);
+
+  const handleSave = async () => {
+    if (!brand || !date || !payment || !type) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+    try {
+      await updateDoc(doc(db, "campaigns", campaign.id), {
+        brand: brand.charAt(0).toUpperCase() + brand.slice(1),
+        type,
+        date,
+        payment: Number(payment),
+        status,
+      });
+      navigation.goBack();
+    } catch (error) {
+      Alert.alert("Error", error.message);
+    }
+  };
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <Text style={styles.title}>Edit Campaign</Text>
+
+      <FormInput
+        label="Brand"
+        placeholder="e.g. Nike"
+        value={brand}
+        onChangeText={setBrand}
+      />
+
+      <Text style={styles.label}>Content type</Text>
+      <OptionSelector options={TYPES} selected={type} onSelect={setType} />
+
+      <FormInput
+        label="Date"
+        placeholder="e.g. 10 Apr"
+        value={date}
+        onChangeText={setDate}
+      />
+
+      <FormInput
+        label="Payment ($)"
+        placeholder="e.g. 500"
+        value={payment}
+        onChangeText={setPayment}
+        keyboardType="numeric"
+      />
+
+      <Text style={styles.label}>Status</Text>
+      <OptionSelector options={STATUSES} selected={status} onSelect={setStatus} />
+
+      <TouchableOpacity style={styles.btn} onPress={handleSave}>
+        <Text style={styles.btnText}>Save Changes</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.backgroundScreen,
+  },
+  content: {
+    padding: 24,
+    paddingTop: 60,
+    paddingBottom: 60,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: colors.text,
+    marginBottom: 32,
+    letterSpacing: 0.3,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.inactive,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: 8,
+  },
+  btn: {
+    width: "100%",
+    height: 62,
+    backgroundColor: colors.backgroundBtn,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.btnBorder,
+    marginTop: 16,
+  },
+  btnText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.active,
+    letterSpacing: 0.3,
+  },
+});

@@ -24,7 +24,7 @@ export default function TabNavigator() {
           paddingBottom: 10,
           height: 70,
         },
-        tabBarActiveTintColor: colors.active,
+        tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.inactive,
       }}
     >

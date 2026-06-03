@@ -14,7 +14,7 @@ export default function HomeScreen({ navigation }) {
 					onPress={() => navigation.navigate("Notifications")}
 				>
 					<Ionicons 
-            name="notifications-outline" size={22} color={colors.active} />
+            name="notifications-outline" size={22} color={colors.primary} />
 				</TouchableOpacity>
 			</View>
 		</ScrollView>
