@@ -36,3 +36,10 @@ export const colorDelete = {
 	bgDelete: "rgba(248,113,113,0.15)",
 	bgDeleteBorder:"rgba(248,113,113,0.3)"
 }
+
+export const errorModal = {
+	bg:"rgba(0,0,0,0.6)",
+	iconWrap:"rgba(248,113,113,0.1)",
+	btnBg:"rgba(248,113,113,0.15)",
+	btnBorder: "rgba(248,113,113,0.3)"
+}

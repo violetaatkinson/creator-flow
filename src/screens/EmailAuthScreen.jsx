@@ -1,16 +1,26 @@
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useState } from "react";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword} from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase/firebaseConfig";
 
-import CustomInput from "../components/CustomInput";
 import { colors } from "../constants/colors";
+
+import CustomInput from "../components/CustomInput";
 import SignBtn from "../components/SignBtn";
+import ErrorModal from "../components/ErrorModal";
 
 export default function EmailAuthScreen({ navigation }) {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [isLogin, setIsLogin] = useState(false);
+
+	const [errorVisible, setErrorVisible] = useState(false);
+	const [errorMessage, setErrorMessage] = useState("");
+
+	const showError = (message) => {
+		setErrorMessage(message);
+		setErrorVisible(true);
+	};
 
 	const handleSubmit = async () => {
 		try {
@@ -19,11 +29,23 @@ export default function EmailAuthScreen({ navigation }) {
 			} else {
 				await createUserWithEmailAndPassword(auth, email, password);
 			}
+
 			navigation.replace("Main");
 		} catch (error) {
 			console.log("CODE:", error.code);
 			console.log("MESSAGE:", error.message);
-			Alert.alert(error.code, error.message);
+
+			if (error.code === "auth/invalid-email") {
+				showError("Please enter a valid email.");
+			} else if (error.code === "auth/wrong-password") {
+				showError("Incorrect password.");
+			} else if (error.code === "auth/user-not-found") {
+				showError("No account found with this email.");
+			} else if (error.code === "auth/email-already-in-use") {
+				showError("This email is already registered.");
+			} else {
+				showError("Something went wrong. Please try again.");
+			}
 		}
 	};
 
@@ -47,16 +69,19 @@ export default function EmailAuthScreen({ navigation }) {
 				secureTextEntry
 			/>
 
-			<SignBtn
-				title={isLogin ? "Sign in" : "Sign up"}
-				onPress={handleSubmit}
-			/>
+			<SignBtn title={isLogin ? "Sign in" : "Sign up"} onPress={handleSubmit} />
 
 			<TouchableOpacity onPress={() => setIsLogin(!isLogin)}>
 				<Text style={styles.toggle}>
 					{isLogin ? "No account? Sign up" : "Have an account? Sign in"}
 				</Text>
 			</TouchableOpacity>
+
+			<ErrorModal
+				visible={errorVisible}
+				message={errorMessage}
+				onClose={() => setErrorVisible(false)}
+			/>
 		</View>
 	);
 }
@@ -75,7 +100,7 @@ const styles = StyleSheet.create({
 		marginBottom: 30,
 		letterSpacing: 0.3,
 	},
-	
+
 	toggle: {
 		textAlign: "center",
 		color: colors.toggle,
