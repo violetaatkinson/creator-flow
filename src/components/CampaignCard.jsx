@@ -1,9 +1,12 @@
 import { memo, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import Swipeable from "react-native-gesture-handler/Swipeable";
 import { doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
+
 import { colorALight, colors, colorEdit, colorDelete } from "../constants/colors";
+
+import ConfirmModal from "./ConfirmModal";
 
 const statusColors = {
 	Active: colors.active,
@@ -23,18 +26,18 @@ const avatarColors = [
 ];
 
 const MONTHS_EN = [
-	"jan",
-	"feb",
-	"mar",
-	"apr",
-	"may",
-	"jun",
-	"jul",
-	"aug",
-	"sep",
-	"oct",
-	"nov",
-	"dec",
+	"Jan",
+	"Feb",
+	"Mar",
+	"Apr",
+	"May",
+	"Jun",
+	"Jul",
+	"Aug",
+	"Sep",
+	"Oct",
+	"Nov",
+	"Dec",
 ];
 const MONTHS_ES = [
 	"Ene",
@@ -64,6 +67,8 @@ function formatDate(date) {
 
 const CampaignCard = memo(({ item, index, onEdit }) => {
 	const [showStatuses, setShowStatuses] = useState(false);
+	const [confirmVisible, setConfirmVisible] = useState(false);
+
 	const avatarColor = avatarColors[index % avatarColors.length];
 
 	const handleStatusChange = async (newStatus) => {
@@ -76,24 +81,16 @@ const CampaignCard = memo(({ item, index, onEdit }) => {
 	};
 
 	const handleDelete = () => {
-		Alert.alert(
-			"Delete campaign",
-			`Are you sure you want to delete ${item.brand}?`,
-			[
-				{ text: "Cancel", style: "cancel" },
-				{
-					text: "Delete",
-					style: "destructive",
-					onPress: async () => {
-						try {
-							await deleteDoc(doc(db, "campaigns", item.id));
-						} catch (error) {
-							console.log(error);
-						}
-					},
-				},
-			],
-		);
+		setConfirmVisible(true);
+	};
+
+	const confirmDelete = async () => {
+		try {
+			await deleteDoc(doc(db, "campaigns", item.id));
+			setConfirmVisible(false);
+		} catch (error) {
+			console.log(error);
+		}
 	};
 
 	const renderRightActions = () => (
@@ -171,6 +168,14 @@ const CampaignCard = memo(({ item, index, onEdit }) => {
 					</View>
 				)}
 			</View>
+
+			<ConfirmModal
+				visible={confirmVisible}
+				title="Delete campaign"
+				message={`Are you sure you want to delete ${item.brand}?`}
+				onConfirm={confirmDelete}
+				onCancel={() => setConfirmVisible(false)}
+			/>
 		</Swipeable>
 	);
 });
