@@ -43,3 +43,9 @@ export const errorModal = {
 	btnBg:"rgba(248,113,113,0.15)",
 	btnBorder: "rgba(248,113,113,0.3)"
 }
+
+export const calendarDate = {
+	month:"rgba(185,110,255,0.6)",
+	boxBg:"rgba(185,110,255,0.1)",
+	boxBorder: "rgba(185,110,255,0.2)"
+}

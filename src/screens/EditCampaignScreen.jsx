@@ -2,8 +2,8 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-nati
 import { useState } from "react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
+import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../constants/colors";
-
 import FormInput from "../components/FormInput";
 import OptionSelector from "../components/OptionSelector";
 import ErrorModal from "../components/ErrorModal";
@@ -12,130 +12,138 @@ const TYPES = ["Post", "Reel", "Story", "Live", "Video"];
 const STATUSES = ["Pending", "Active", "Paused", "Completed"];
 
 export default function EditCampaignScreen({ navigation, route }) {
-	const { campaign } = route.params;
+  const { campaign } = route.params;
 
-	const [brand, setBrand] = useState(campaign.brand);
-	const [type, setType] = useState(campaign.type);
-	const [date, setDate] = useState(campaign.date);
-	const [payment, setPayment] = useState(String(campaign.payment));
-	const [status, setStatus] = useState(campaign.status);
+  const [brand, setBrand] = useState(campaign.brand);
+  const [type, setType] = useState(campaign.type);
+  const [date, setDate] = useState(campaign.date);
+  const [payment, setPayment] = useState(String(campaign.payment));
+  const [status, setStatus] = useState(campaign.status);
+  const [errorVisible, setErrorVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-	const [errorVisible, setErrorVisible] = useState(false);
-	const [errorMessage, setErrorMessage] = useState("");
+  const showError = (message) => {
+    setErrorMessage(message);
+    setErrorVisible(true);
+  };
 
-	const showError = (message) => {
-		setErrorMessage(message);
-		setErrorVisible(true);
-	};
+  const handleSave = async () => {
+    if (!brand || !date || !payment || !type) {
+      showError("Complete all fields to save your changes.");
+      return;
+    }
+    try {
+      await updateDoc(doc(db, "campaigns", campaign.id), {
+        brand: brand.charAt(0).toUpperCase() + brand.slice(1),
+        type,
+        date,
+        payment: Number(payment),
+        status,
+      });
+      navigation.goBack();
+    } catch (error) {
+      showError(error.message);
+    }
+  };
 
-	const handleSave = async () => {
-		if (!brand || !date || !payment || !type) {
-			showError("Complete all fields to save your changes.");
-			return;
-		}
-		try {
-			await updateDoc(doc(db, "campaigns", campaign.id), {
-				brand: brand.charAt(0).toUpperCase() + brand.slice(1),
-				type,
-				date,
-				payment: Number(payment),
-				status,
-			});
-			navigation.goBack();
-		} catch (error) {
-			showError(error.message);
-		}
-	};
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
 
-	return (
-		<ScrollView style={styles.container} contentContainerStyle={styles.content}>
-			<Text style={styles.title}>Edit Campaign</Text>
+      <View style={styles.titleRow}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={26} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={styles.title}>Edit Campaign</Text>
+        <View style={{ width: 26 }} />
+      </View>
 
-			<FormInput
-				label="Brand"
-				placeholder="e.g. Nike"
-				value={brand}
-				onChangeText={setBrand}
-			/>
+      <FormInput
+        label="Brand"
+        placeholder="e.g. Nike"
+        value={brand}
+        onChangeText={setBrand}
+      />
 
-			<Text style={styles.label}>Content type</Text>
-			<OptionSelector options={TYPES} selected={type} onSelect={setType} />
+      <Text style={styles.label}>Content type</Text>
+      <OptionSelector options={TYPES} selected={type} onSelect={setType} />
 
-			<FormInput
-				label="Date"
-				placeholder="e.g. 10 Apr"
-				value={date}
-				onChangeText={setDate}
-			/>
+      <FormInput
+        label="Date"
+        placeholder="e.g. 10 Apr"
+        value={date}
+        onChangeText={setDate}
+      />
 
-			<FormInput
-				label="Payment ($)"
-				placeholder="e.g. 500"
-				value={payment}
-				onChangeText={setPayment}
-				keyboardType="numeric"
-			/>
+      <FormInput
+        label="Payment ($)"
+        placeholder="e.g. 500"
+        value={payment}
+        onChangeText={setPayment}
+        keyboardType="numeric"
+      />
 
-			<Text style={styles.label}>Status</Text>
-			<OptionSelector
-				options={STATUSES}
-				selected={status}
-				onSelect={setStatus}
-			/>
+      <Text style={styles.label}>Status</Text>
+      <OptionSelector options={STATUSES} selected={status} onSelect={setStatus} />
 
-			<TouchableOpacity style={styles.btn} onPress={handleSave}>
-				<Text style={styles.btnText}>Save Changes</Text>
-			</TouchableOpacity>
-			
+      <TouchableOpacity style={styles.btn} onPress={handleSave}>
+        <Text style={styles.btnText}>Save Changes</Text>
+      </TouchableOpacity>
+
       <ErrorModal
-				visible={errorVisible}
-				message={errorMessage}
-				onClose={() => setErrorVisible(false)}
-			/>
-		</ScrollView>
-	);
+        visible={errorVisible}
+        message={errorMessage}
+        onClose={() => setErrorVisible(false)}
+      />
+
+    </ScrollView>
+  );
 }
 
 const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: colors.backgroundScreen,
-	},
-	content: {
-		padding: 24,
-		paddingTop: 60,
-		paddingBottom: 60,
-	},
-	title: {
-		fontSize: 28,
-		fontWeight: "800",
-		color: colors.text,
-		marginBottom: 32,
-		letterSpacing: 0.3,
-	},
-	label: {
-		fontSize: 12,
-		fontWeight: "600",
-		color: colors.inactive,
-		textTransform: "uppercase",
-		letterSpacing: 0.8,
-		marginBottom: 8,
-	},
-	btn: {
-		width: "100%",
-		height: 62,
-		backgroundColor: colors.backgroundBtn,
-		borderRadius: 20,
-		alignItems: "center",
-		justifyContent: "center",
-		borderWidth: 1,
-		borderColor: colors.btnBorder,
-		marginTop: 16,
-	},
-	btnText: {
-		fontSize: 16,
-		fontWeight: "600",
-		color: colors.active,
-		letterSpacing: 0.3,
-	},
+  container: {
+    flex: 1,
+    backgroundColor: colors.backgroundScreen,
+  },
+  content: {
+    padding: 24,
+    paddingTop: 60,
+    paddingBottom: 60,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 32,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: colors.text,
+    letterSpacing: 0.3,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.inactive,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: 8,
+  },
+  btn: {
+    width: "100%",
+    height: 62,
+    backgroundColor: colors.backgroundBtn,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.btnBorder,
+    marginTop: 16,
+  },
+  btnText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.active,
+    letterSpacing: 0.3,
+  },
 });

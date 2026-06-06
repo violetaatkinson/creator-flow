@@ -3,12 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import Swipeable from "react-native-gesture-handler/Swipeable";
 import { doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
-import {
-	colorALight,
-	colors,
-	colorEdit,
-	colorDelete,
-} from "../constants/colors";
+import { colorALight, colors, colorEdit, colorDelete } from "../constants/colors";
 
 const statusColors = {
 	Active: colors.active,
