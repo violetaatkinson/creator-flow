@@ -123,7 +123,7 @@ const CampaignCard = memo(({ item, index, onEdit }) => {
 					<View style={styles.info}>
 						<Text style={styles.brandName}>{item.brand}</Text>
 						<Text style={styles.detail}>
-							{item.type} · {formatDate(item.date)} · ${item.payment}
+							 {item.platform} · {item.type} · {formatDate(item.date)} · ${item.payment}
 						</Text>
 					</View>
 					<TouchableOpacity

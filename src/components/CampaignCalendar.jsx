@@ -42,7 +42,7 @@ const CalendarItem = memo(({ item }) => {
       
       <View style={styles.info}>
         <Text style={styles.brandName}>{item.brand}</Text>
-        <Text style={styles.detail}>{item.type} · ${item.payment}</Text>
+        <Text style={styles.detail}>{item.platform} · {item.type} · ${item.payment}</Text>
       </View>
 
       <View style={[styles.dot, { backgroundColor: statusColors[item.status] }]} />

@@ -47,7 +47,7 @@ export default function CampaignHistory({ campaigns }) {
             <View style={styles.info}>
               <Text style={styles.brandName}>{item.brand}</Text>
               <Text style={styles.detail}>
-                {item.type} · {item.date} · ${item.payment}
+                {item.platform} · {item.type} · {item.date} · ${item.payment}
               </Text>
             </View>
             <View style={[

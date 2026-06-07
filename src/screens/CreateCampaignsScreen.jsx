@@ -8,11 +8,13 @@ import FormInput from "../components/FormInput";
 import OptionSelector from "../components/OptionSelector";
 import ErrorModal from "../components/ErrorModal";
 
+const PLATFORMS = ["Instagram", "TikTok", "YouTube"];
 const TYPES = ["Post", "Reel", "Story", "Live", "Video"];
 const STATUSES = ["Pending", "Active", "Paused", "Completed"];
 
 export default function CreateCampaignScreen({ navigation }) {
   const [brand, setBrand] = useState("");
+  const [platform, setPlatform] = useState("Instagram");
   const [type, setType] = useState("Post");
   const [date, setDate] = useState("");
   const [payment, setPayment] = useState("");
@@ -26,13 +28,14 @@ export default function CreateCampaignScreen({ navigation }) {
   };
 
   const handleCreate = async () => {
-    if (!brand || !date || !payment || !type) {
+    if (!brand || !date || !payment || !type || !platform) {
       showError("Complete all fields to continue.");
       return;
     }
     try {
       await addDoc(collection(db, "campaigns"), {
         brand: brand.charAt(0).toUpperCase() + brand.slice(1),
+        platform,
         type,
         date,
         payment: Number(payment),
@@ -63,6 +66,9 @@ export default function CreateCampaignScreen({ navigation }) {
         value={brand}
         onChangeText={setBrand}
       />
+
+      <Text style={styles.label}>Platform</Text>
+      <OptionSelector options={PLATFORMS} selected={platform} onSelect={setPlatform} />
 
       <Text style={styles.label}>Content type</Text>
       <OptionSelector options={TYPES} selected={type} onSelect={setType} />

@@ -8,6 +8,7 @@ import FormInput from "../components/FormInput";
 import OptionSelector from "../components/OptionSelector";
 import ErrorModal from "../components/ErrorModal";
 
+const PLATFORMS = ["Instagram", "TikTok", "YouTube"];
 const TYPES = ["Post", "Reel", "Story", "Live", "Video"];
 const STATUSES = ["Pending", "Active", "Paused", "Completed"];
 
@@ -15,6 +16,7 @@ export default function EditCampaignScreen({ navigation, route }) {
   const { campaign } = route.params;
 
   const [brand, setBrand] = useState(campaign.brand);
+  const [platform, setPlatform] = useState(campaign.platform || "Instagram");
   const [type, setType] = useState(campaign.type);
   const [date, setDate] = useState(campaign.date);
   const [payment, setPayment] = useState(String(campaign.payment));
@@ -28,13 +30,14 @@ export default function EditCampaignScreen({ navigation, route }) {
   };
 
   const handleSave = async () => {
-    if (!brand || !date || !payment || !type) {
+    if (!brand || !date || !payment || !type || !platform) {
       showError("Complete all fields to save your changes.");
       return;
     }
     try {
       await updateDoc(doc(db, "campaigns", campaign.id), {
         brand: brand.charAt(0).toUpperCase() + brand.slice(1),
+        platform,
         type,
         date,
         payment: Number(payment),
@@ -63,6 +66,9 @@ export default function EditCampaignScreen({ navigation, route }) {
         value={brand}
         onChangeText={setBrand}
       />
+
+      <Text style={styles.label}>Platform</Text>
+      <OptionSelector options={PLATFORMS} selected={platform} onSelect={setPlatform} />
 
       <Text style={styles.label}>Content type</Text>
       <OptionSelector options={TYPES} selected={type} onSelect={setType} />
