@@ -29,8 +29,7 @@ export default function EmailAuthScreen({ navigation }) {
 			} else {
 				await createUserWithEmailAndPassword(auth, email, password);
 			}
-
-			navigation.replace("Main");
+			
 		} catch (error) {
 			console.log("CODE:", error.code);
 			console.log("MESSAGE:", error.message);
