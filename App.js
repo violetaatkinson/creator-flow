@@ -14,6 +14,7 @@ import LoginScreen from "./src/screens/LoginScreen";
 import EmailAuthScreen from "./src/screens/EmailAuthScreen";
 import CreateCampaignScreen from "./src/screens/CreateCampaignsScreen";
 import EditCampaignScreen from "./src/screens/EditCampaignScreen";
+import AddExpenseScreen from "./src/screens/AddExpenseScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -57,6 +58,7 @@ export default function App() {
 								component={CreateCampaignScreen}
 							/>
 							<Stack.Screen name="EditCampaign" component={EditCampaignScreen} />
+							<Stack.Screen name="AddExpense" component={AddExpenseScreen} />
 						</>
 					) : (
 						<>

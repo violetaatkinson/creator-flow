@@ -49,3 +49,9 @@ export const calendarDate = {
 	boxBg:"rgba(185,110,255,0.1)",
 	boxBorder: "rgba(185,110,255,0.2)"
 }
+
+export const plataforms = {
+	instagram:"#E1306C",
+	youtube:"#FF0000" 
+
+}
