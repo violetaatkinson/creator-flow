@@ -252,7 +252,7 @@ export default function FinanceScreen({ navigation }) {
 				)}
 
 				<View style={styles.sectionHeader}>
-					<Text style={styles.sectionTitle}>Expenses</Text>
+					<Text style={[styles.sectionTitle, { paddingTop: 8 }]}>Expenses</Text>
 					<TouchableOpacity
 						style={styles.addBtn}
 						onPress={() => navigation.navigate("AddExpense")}
@@ -479,9 +479,9 @@ const styles = StyleSheet.create({
 		letterSpacing: 0.3,
 	},
 	expenseSubtitle: {
-		fontSize: 11,
+		fontSize: 12,
 		color: colors.inactive,
-		marginTop: 3,
+		marginTop: 6,
 		letterSpacing: 0.3,
 	},
 	expenseAmount: {
