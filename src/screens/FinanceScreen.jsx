@@ -2,8 +2,9 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Modal } from "rea
 import { useEffect, useState } from "react";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db, auth } from "../firebase/firebaseConfig";
-import { colors, plataforms,errorModal } from "../constants/colors";
+import { colors, plataforms, errorModal } from "../constants/colors";
 import { FontAwesome5 } from "@expo/vector-icons";
+
 
 const MONTHS = [
 	"Jan",
@@ -113,6 +114,7 @@ export default function FinanceScreen({ navigation }) {
 		<View style={styles.container}>
 			<View style={styles.header}>
 				<Text style={styles.title}>Finances</Text>
+				
 				<View style={styles.periodLine}>
 					{["Month", "Semester", "Year"].map((p, i) => (
 						<View
@@ -189,7 +191,7 @@ export default function FinanceScreen({ navigation }) {
 				<View style={styles.kpiRow}>
 					<View style={[styles.kpi, styles.kpiBorder]}>
 						<Text style={styles.kpiLabel}>Income</Text>
-						<Text style={[styles.kpiValue, { color: colors.active}]}>
+						<Text style={[styles.kpiValue, { color: colors.active }]}>
 							${totalIncome}
 						</Text>
 					</View>
@@ -235,7 +237,12 @@ export default function FinanceScreen({ navigation }) {
 									<Text
 										style={[
 											styles.campaignAmount,
-											{ color: c.status === "Active" ? colors.pending : colors.active },
+											{
+												color:
+													c.status === "Active"
+														? colors.pending
+														: colors.active,
+											},
 										]}
 									>
 										{c.status === "Active" ? "⏳ " : "+"}${c.payment}
