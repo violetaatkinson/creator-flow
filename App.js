@@ -6,6 +6,7 @@ import { View, ActivityIndicator } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./src/firebase/firebaseConfig";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { colors } from "./src/constants/colors";
 
@@ -46,28 +47,33 @@ export default function App() {
 	}
 
 	return (
-		<GestureHandlerRootView style={{ flex: 1 }}>
-			<NavigationContainer>
-				<StatusBar style="light" />
-				<Stack.Navigator screenOptions={{ headerShown: false }}>
-					{user ? (
-						<>
-							<Stack.Screen name="Main" component={TabNavigator} />
-							<Stack.Screen
-								name="CreateCampaign"
-								component={CreateCampaignScreen}
-							/>
-							<Stack.Screen name="EditCampaign" component={EditCampaignScreen} />
-							<Stack.Screen name="AddExpense" component={AddExpenseScreen} />
-						</>
-					) : (
-						<>
-							<Stack.Screen name="Login" component={LoginScreen} />
-							<Stack.Screen name="EmailAuth" component={EmailAuthScreen} />
-						</>
-					)}
-				</Stack.Navigator>
-			</NavigationContainer>
-		</GestureHandlerRootView>
+		<SafeAreaProvider>
+			<GestureHandlerRootView style={{ flex: 1 }}>
+				<NavigationContainer>
+					<StatusBar style="light" />
+					<Stack.Navigator screenOptions={{ headerShown: false }}>
+						{user ? (
+							<>
+								<Stack.Screen name="Main" component={TabNavigator} />
+								<Stack.Screen
+									name="CreateCampaign"
+									component={CreateCampaignScreen}
+								/>
+								<Stack.Screen
+									name="EditCampaign"
+									component={EditCampaignScreen}
+								/>
+								<Stack.Screen name="AddExpense" component={AddExpenseScreen} />
+							</>
+						) : (
+							<>
+								<Stack.Screen name="Login" component={LoginScreen} />
+								<Stack.Screen name="EmailAuth" component={EmailAuthScreen} />
+							</>
+						)}
+					</Stack.Navigator>
+				</NavigationContainer>
+			</GestureHandlerRootView>
+		</SafeAreaProvider>
 	);
 }

@@ -4,7 +4,8 @@ import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db, auth } from "../firebase/firebaseConfig";
 import { colors, plataforms, errorModal } from "../constants/colors";
 import { FontAwesome5 } from "@expo/vector-icons";
-
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import NotificationBell from "../components/NotificationBell";
 
 const MONTHS = [
 	"Jan",
@@ -33,6 +34,7 @@ const PlatformIcon = ({ platform }) => {
 };
 
 export default function FinanceScreen({ navigation }) {
+	const insets = useSafeAreaInsets();
 	const [campaigns, setCampaigns] = useState([]);
 	const [expenses, setExpenses] = useState([]);
 	const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
@@ -111,10 +113,15 @@ export default function FinanceScreen({ navigation }) {
 		text.charAt(0).toUpperCase() + text.slice(1);
 
 	return (
-		<View style={styles.container}>
-			<View style={styles.header}>
-				<Text style={styles.title}>Finances</Text>
-				
+		<ScrollView
+			style={styles.container}
+			contentContainerStyle={styles.scrollContent}
+		>
+			<View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+				<View style={styles.headerTop}>
+					<Text style={styles.title}>Finances</Text>
+					<NotificationBell />
+				</View>
 				<View style={styles.periodLine}>
 					{["Month", "Semester", "Year"].map((p, i) => (
 						<View
@@ -187,127 +194,124 @@ export default function FinanceScreen({ navigation }) {
 				</View>
 			</Modal>
 
-			<ScrollView contentContainerStyle={styles.scrollContent}>
-				<View style={styles.kpiRow}>
-					<View style={[styles.kpi, styles.kpiBorder]}>
-						<Text style={styles.kpiLabel}>Income</Text>
-						<Text style={[styles.kpiValue, { color: colors.active }]}>
-							${totalIncome}
-						</Text>
-					</View>
-					<View style={[styles.kpi, styles.kpiBorder]}>
-						<Text style={styles.kpiLabel}>Expenses</Text>
-						<Text style={[styles.kpiValue, { color: colors.paused }]}>
-							-${totalExpenses}
-						</Text>
-					</View>
-					<View style={styles.kpi}>
-						<Text style={styles.kpiLabel}>Net</Text>
-						<Text style={[styles.kpiValue, { color: colors.primary }]}>
-							${neto}
-						</Text>
-					</View>
+			<View style={styles.kpiRow}>
+				<View style={[styles.kpi, styles.kpiBorder]}>
+					<Text style={styles.kpiLabel}>Income</Text>
+					<Text style={[styles.kpiValue, { color: colors.active }]}>
+						${totalIncome}
+					</Text>
 				</View>
-
-				<Text style={styles.sectionTitle}>Income by source</Text>
-				{Object.entries(campaignsByPlatform).map(([plat, camps]) => (
-					<View key={plat} style={[styles.card, { marginBottom: 10 }]}>
-						<View style={styles.platformHeader}>
-							<PlatformIcon platform={plat} />
-							<Text style={styles.platformName}>{plat}</Text>
-							<Text style={[styles.platformTotal, { color: colors.active }]}>
-								+${camps.reduce((sum, c) => sum + c.payment, 0)}
-							</Text>
-						</View>
-						{camps.map((c, index) => {
-							const isLast = index === camps.length - 1;
-
-							return (
-								<View
-									key={c.id}
-									style={[
-										styles.campaignRow,
-										isLast && { borderBottomWidth: 0 },
-									]}
-								>
-									<Text style={styles.campaignDetail}>
-										{c.brand} · {c.type} · {c.date}
-									</Text>
-
-									<Text
-										style={[
-											styles.campaignAmount,
-											{
-												color:
-													c.status === "Active"
-														? colors.pending
-														: colors.active,
-											},
-										]}
-									>
-										{c.status === "Active" ? "⏳ " : "+"}${c.payment}
-									</Text>
-								</View>
-							);
-						})}
-					</View>
-				))}
-				{filteredCampaigns.length === 0 && (
-					<View style={styles.card}>
-						<Text style={styles.empty}>No income for this period</Text>
-					</View>
-				)}
-
-				<View style={styles.sectionHeader}>
-					<Text style={[styles.sectionTitle, { paddingTop: 8 }]}>Expenses</Text>
-					<TouchableOpacity
-						style={styles.addBtn}
-						onPress={() => navigation.navigate("AddExpense")}
-					>
-						<Text style={styles.addBtnText}>+ Add</Text>
-					</TouchableOpacity>
+				<View style={[styles.kpi, styles.kpiBorder]}>
+					<Text style={styles.kpiLabel}>Expenses</Text>
+					<Text style={[styles.kpiValue, { color: colors.paused }]}>
+						-${totalExpenses}
+					</Text>
 				</View>
-				<View style={styles.card}>
-					{filteredExpenses.map((e, index) => {
-						const isLast = index === filteredExpenses.length - 1;
+				<View style={styles.kpi}>
+					<Text style={styles.kpiLabel}>Net</Text>
+					<Text style={[styles.kpiValue, { color: colors.primary }]}>
+						${neto}
+					</Text>
+				</View>
+			</View>
+
+			<Text style={styles.sectionTitle}>Income by source</Text>
+			{Object.entries(campaignsByPlatform).map(([plat, camps]) => (
+				<View key={plat} style={[styles.card, { marginBottom: 10 }]}>
+					<View style={styles.platformHeader}>
+						<PlatformIcon platform={plat} />
+						<Text style={styles.platformName}>{plat}</Text>
+						<Text style={[styles.platformTotal, { color: colors.active }]}>
+							+${camps.reduce((sum, c) => sum + c.payment, 0)}
+						</Text>
+					</View>
+					{camps.map((c, index) => {
+						const isLast = index === camps.length - 1;
 						return (
 							<View
-								key={e.id}
-								style={[styles.expenseRow, isLast && { borderBottomWidth: 0 }]}
+								key={c.id}
+								style={[styles.campaignRow, isLast && { borderBottomWidth: 0 }]}
 							>
-								<View style={styles.expenseLeft}>
-									<Text style={styles.expenseCategory}>
-										{capitalize(e.category?.toLowerCase() || "")}
-									</Text>
-
-									<Text style={styles.expenseSubtitle}>
-										{capitalize(e.description || "")} · {e.date}
-									</Text>
-								</View>
-
-								<Text style={styles.expenseAmount}>-${e.amount}</Text>
+								<Text style={styles.campaignDetail}>
+									{c.brand} · {c.type} · {c.date}
+								</Text>
+								<Text
+									style={[
+										styles.campaignAmount,
+										{
+											color:
+												c.status === "Active" ? colors.pending : colors.active,
+										},
+									]}
+								>
+									{c.status === "Active" ? "⏳ " : "+"}${c.payment}
+								</Text>
 							</View>
 						);
 					})}
-
-					{filteredExpenses.length === 0 && (
-						<Text style={styles.empty}>No expenses for this period</Text>
-					)}
 				</View>
-			</ScrollView>
-		</View>
+			))}
+			{filteredCampaigns.length === 0 && (
+				<View style={styles.card}>
+					<Text style={styles.empty}>No income for this period</Text>
+				</View>
+			)}
+
+			<View style={styles.sectionHeader}>
+				<Text style={[styles.sectionTitle, { paddingTop: 8 }]}>Expenses</Text>
+				<TouchableOpacity
+					style={styles.addBtn}
+					onPress={() => navigation.navigate("AddExpense")}
+				>
+					<Text style={styles.addBtnText}>+ Add</Text>
+				</TouchableOpacity>
+			</View>
+			<View style={styles.card}>
+				{filteredExpenses.map((e, index) => {
+					const isLast = index === filteredExpenses.length - 1;
+					return (
+						<View
+							key={e.id}
+							style={[styles.expenseRow, isLast && { borderBottomWidth: 0 }]}
+						>
+							<View style={styles.expenseLeft}>
+								<Text style={styles.expenseCategory}>
+									{capitalize(e.category?.toLowerCase() || "")}
+								</Text>
+								<Text style={styles.expenseSubtitle}>
+									{capitalize(e.description || "")} · {e.date}
+								</Text>
+							</View>
+							<Text style={styles.expenseAmount}>-${e.amount}</Text>
+						</View>
+					);
+				})}
+				{filteredExpenses.length === 0 && (
+					<Text style={styles.empty}>No expenses for this period</Text>
+				)}
+			</View>
+		</ScrollView>
 	);
 }
 
 const styles = StyleSheet.create({
 	container: { flex: 1, backgroundColor: colors.backgroundScreen },
-	header: { paddingHorizontal: 20, paddingTop: 50, paddingBottom: 12 },
+	scrollContent: { paddingBottom: 40 },
+	header: {
+		paddingHorizontal: 20,
+		paddingBottom: 12,
+	},
+	headerTop: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
+		marginBottom: 8,
+	},
 	title: {
 		fontSize: 28,
 		fontWeight: "800",
 		color: colors.text,
 		letterSpacing: 0.3,
-		marginBottom: 8,
 	},
 	periodLine: {
 		flexDirection: "row",
@@ -377,7 +381,6 @@ const styles = StyleSheet.create({
 		fontWeight: "600",
 		letterSpacing: 0.3,
 	},
-	scrollContent: { padding: 18, paddingBottom: 40 },
 	kpiRow: {
 		flexDirection: "row",
 		backgroundColor: colors.surface,
@@ -386,6 +389,7 @@ const styles = StyleSheet.create({
 		borderColor: colors.border,
 		marginBottom: 24,
 		overflow: "hidden",
+		marginHorizontal: 18,
 	},
 	kpi: { flex: 1, padding: 14, alignItems: "center" },
 	kpiBorder: { borderRightWidth: 1, borderRightColor: colors.border },
@@ -409,6 +413,7 @@ const styles = StyleSheet.create({
 		letterSpacing: 0.8,
 		marginBottom: 12,
 		marginTop: 6,
+		paddingHorizontal: 18,
 	},
 	sectionHeader: {
 		flexDirection: "row",
@@ -416,6 +421,7 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		marginBottom: 20,
 		marginTop: 14,
+		paddingHorizontal: 18,
 	},
 	addBtn: {
 		backgroundColor: colors.backgroundBtn,
@@ -438,6 +444,7 @@ const styles = StyleSheet.create({
 		borderColor: colors.border,
 		paddingHorizontal: 14,
 		paddingVertical: 8,
+		marginHorizontal: 18,
 	},
 	platformHeader: {
 		flexDirection: "row",
@@ -478,7 +485,6 @@ const styles = StyleSheet.create({
 		borderBottomColor: colors.border,
 	},
 	expenseLeft: { flex: 1 },
-
 	expenseCategory: {
 		fontSize: 14,
 		fontWeight: "700",

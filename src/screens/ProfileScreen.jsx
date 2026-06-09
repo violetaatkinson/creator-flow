@@ -1,12 +1,14 @@
 import { View, Text, ScrollView, StyleSheet } from "react-native";
-
-import NotificationBell from "../components/NotificationBell";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../constants/colors";
+import NotificationBell from "../components/NotificationBell";
 
 export default function ProfileScreen() {
+	const insets = useSafeAreaInsets();
+
 	return (
 		<ScrollView style={styles.container}>
-			<View style={styles.header}>
+			<View style={[styles.header, { paddingTop: insets.top + 12 }]}>
 				<Text style={styles.title}>Profile</Text>
 				<NotificationBell />
 			</View>
@@ -20,8 +22,8 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		justifyContent: "space-between",
 		alignItems: "center",
-		padding: 20,
-		marginTop: 35,
+		paddingHorizontal: 20,
+		paddingBottom: 12,
 	},
 	title: { color: colors.text, fontSize: 24, fontWeight: "800" },
 });
