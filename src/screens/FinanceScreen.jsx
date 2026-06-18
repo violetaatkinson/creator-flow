@@ -2,10 +2,10 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Modal } from "rea
 import { useEffect, useState } from "react";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db, auth } from "../firebase/firebaseConfig";
-import { colors, plataforms, errorModal } from "../constants/colors";
-import { FontAwesome5 } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { colors, errorModal } from "../constants/colors";
 import NotificationBell from "../components/NotificationBell";
+import PlatformIcon from "../components/PlatformIcon";
 
 const MONTHS = [
 	"Jan",
@@ -22,16 +22,6 @@ const MONTHS = [
 	"Dec",
 ];
 const currentYear = new Date().getFullYear();
-
-const PlatformIcon = ({ platform }) => {
-	const icons = {
-		Instagram: { name: "instagram", color: plataforms.instagram },
-		TikTok: { name: "tiktok", color: colors.text },
-		YouTube: { name: "youtube", color: plataforms.youtube },
-	};
-	const icon = icons[platform] || { name: "globe", color: colors.inactive };
-	return <FontAwesome5 name={icon.name} size={14} color={icon.color} />;
-};
 
 export default function FinanceScreen({ navigation }) {
 	const insets = useSafeAreaInsets();
