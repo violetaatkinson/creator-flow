@@ -17,6 +17,7 @@ export const colors = {
 	avatarBg: "rgba(185,110,255,0.15)",
 	avatarT: "#2dd4bf",
 	avatarTB: "#60a5fa",
+	brandAv:"rgba(185,110,255,0.15)"
 };
 
 export const colorALight = {
@@ -52,6 +53,12 @@ export const calendarDate = {
 
 export const plataforms = {
 	instagram:"#E1306C",
-	youtube:"#FF0000" 
+	youtube:"#FF0000" ,
+}
+
+export const successModal = {
+	iconWrap:"rgba(74,222,128,0.1)",
+	bgBtn:"rgba(74,222,128,0.15)",
+	btnBorder:"rgba(74,222,128,0.3)",
 
 }
