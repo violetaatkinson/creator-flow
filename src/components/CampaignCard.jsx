@@ -5,7 +5,7 @@ import { doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
 
 import { colorALight, colors, colorEdit, colorDelete } from "../constants/colors";
-
+import PlatformIcon from "./PlatformIcon";
 import ConfirmModal from "./ConfirmModal";
 
 const statusColors = {
@@ -122,9 +122,10 @@ const CampaignCard = memo(({ item, index, onEdit }) => {
 					</View>
 					<View style={styles.info}>
 						<Text style={styles.brandName}>{item.brand}</Text>
-						<Text style={styles.detail}>
-							 {item.platform} · {item.type} · {formatDate(item.date)} · ${item.payment}
-						</Text>
+						<View style={styles.detailRow}>
+							<PlatformIcon platform={item.platform} size={11} />
+							<Text style={styles.detail}>  {item.type} · {formatDate(item.date)} · ${item.payment}</Text>
+						</View>
 					</View>
 					<TouchableOpacity
 						style={[
@@ -281,5 +282,11 @@ const styles = StyleSheet.create({
 		fontWeight: "700",
 		color: colors.text,
 		letterSpacing: 0.3,
+	},
+	detailRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		marginTop: 3,
+		gap: 4,
 	},
 });

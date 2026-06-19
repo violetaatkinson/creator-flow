@@ -25,8 +25,7 @@ export default function DeadlineCard({ campaign, index, label, dColor }) {
 					<Text style={styles.brandName}>{campaign.brand}</Text>
 					<View style={styles.detailRow}>
 						<PlatformIcon platform={campaign.platform} />
-						<Text style={styles.dot}>·</Text>
-						<Text style={styles.detail}>{campaign.type}</Text>
+						<Text style={styles.detail}> {campaign.type}</Text>
 						<Text style={styles.dot}>·</Text>
 						<Text style={styles.detail}>{campaign.date}</Text>
 						<Text style={styles.dot}>·</Text>
@@ -76,7 +75,7 @@ const styles = StyleSheet.create({
 		flexWrap: "wrap",
 	},
 	dot: { fontSize: 10, color: colors.inactive },
-	detail: { fontSize: 11, color: colors.inactive, letterSpacing: 0.3 },
+	detail: { fontSize: 12, color: colors.inactive, letterSpacing: 0.3 },
 	pill: {
 		paddingHorizontal: 10,
 		paddingVertical: 4,
