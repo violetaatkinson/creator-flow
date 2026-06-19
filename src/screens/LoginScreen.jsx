@@ -1,12 +1,12 @@
 import { View, Text, StyleSheet, Image } from "react-native";
 import EmailBtn from "../components/EmailBtn";
-import logo from "../assets/logo.png";
+import Logo from "../components/Logo";
 import { colors } from "../constants/colors";
 
 export default function LoginScreen({ navigation }) {
 	return (
 		<View style={styles.container}>
-			<Image source={logo} style={styles.logo} />
+			<Logo />
 			<Text style={styles.sub}>Your influencer business, organized.</Text>
 			<EmailBtn onPress={() => navigation.navigate("EmailAuth")} />
 		</View>
@@ -29,9 +29,4 @@ const styles = StyleSheet.create({
 		textAlign: "center",
 		letterSpacing: 0.3,
 	},
-  logo: {
-  width: 210,
-  height: 210,
-  resizeMode: "contain",
-},
 });
