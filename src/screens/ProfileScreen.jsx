@@ -6,49 +6,79 @@ import {
 	TouchableOpacity,
 	Image,
 	TextInput,
-	Alert,
+	Linking,
 } from "react-native";
 import { useState, useEffect } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
+import {
+	collection,
+	query,
+	where,
+	getDocs,
+	doc,
+	setDoc,
+	getDoc,
+} from "firebase/firestore";
 import { db, auth } from "../firebase/firebaseConfig";
 import { colors } from "../constants/colors";
-import { Ionicons } from "@expo/vector-icons";
-
+import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import NotificationBell from "../components/NotificationBell";
 import SuccessModal from "../components/SuccessModal";
 import ErrorModal from "../components/ErrorModal";
+
+const MONTHS = [
+	"Jan",
+	"Feb",
+	"Mar",
+	"Apr",
+	"May",
+	"Jun",
+	"Jul",
+	"Aug",
+	"Sep",
+	"Oct",
+	"Nov",
+	"Dec",
+];
 
 export default function ProfileScreen() {
 	const insets = useSafeAreaInsets();
 	const [name, setName] = useState("");
 	const [handle, setHandle] = useState("");
+	const [instagram, setInstagram] = useState("");
+	const [tiktok, setTiktok] = useState("");
+	const [youtube, setYoutube] = useState("");
 	const [photoUri, setPhotoUri] = useState(null);
 	const [editing, setEditing] = useState(false);
 	const [loading, setLoading] = useState(true);
 	const [successVisible, setSuccessVisible] = useState(false);
 	const [errorVisible, setErrorVisible] = useState(false);
 	const [errorMessage, setErrorMessage] = useState("");
+	const [reportPeriod, setReportPeriod] = useState(null);
 
-	const showError = (message) => {
-		setErrorMessage(message);
+	const showError = (msg) => {
+		setErrorMessage(msg);
 		setErrorVisible(true);
 	};
-	// carga el perfil del usuario desde Firestore al abrir la pantalla
+
 	useEffect(() => {
 		const loadProfile = async () => {
 			try {
-				const ref = doc(db, "users", auth.currentUser.uid);
-				const snap = await getDoc(ref);
+				const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
 				if (snap.exists()) {
-					const data = snap.data();
-					setName(data.name || "");
-					setHandle(data.handle || "");
-					setPhotoUri(data.photoUri || null);
+					const d = snap.data();
+					setName(d.name || "");
+					setHandle(d.handle || "");
+					setInstagram(d.instagram || "");
+					setTiktok(d.tiktok || "");
+					setYoutube(d.youtube || "");
+					setPhotoUri(d.photoUri || null);
 				}
-			} catch (error) {
-				console.log(error);
+			} catch (e) {
+				console.log(e);
 			} finally {
 				setLoading(false);
 			}
@@ -59,9 +89,7 @@ export default function ProfileScreen() {
 	const pickImage = async () => {
 		const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 		if (status !== "granted") {
-			showError(
-				"Please allow access to your photo library to set a profile picture.",
-			);
+			showError("Please allow access to your photo library.");
 			return;
 		}
 		const result = await ImagePicker.launchImageLibraryAsync({
@@ -70,9 +98,7 @@ export default function ProfileScreen() {
 			aspect: [1, 1],
 			quality: 0.7,
 		});
-		if (!result.canceled) {
-			setPhotoUri(result.assets[0].uri);
-		}
+		if (!result.canceled) setPhotoUri(result.assets[0].uri);
 	};
 
 	const handleSave = async () => {
@@ -80,14 +106,189 @@ export default function ProfileScreen() {
 			await setDoc(doc(db, "users", auth.currentUser.uid), {
 				name,
 				handle,
+				instagram,
+				tiktok,
+				youtube,
 				photoUri,
 				email: auth.currentUser.email,
 				updatedAt: new Date(),
 			});
 			setEditing(false);
 			setSuccessVisible(true);
-		} catch (error) {
-			showError(error.message);
+		} catch (e) {
+			showError(e.message);
+		}
+	};
+
+	const openPlatform = (platform, username) => {
+		if (!username) return;
+		const clean = username.replace("@", "");
+		const urls = {
+			instagram: `https://instagram.com/${clean}`,
+			tiktok: `https://tiktok.com/@${clean}`,
+			youtube: `https://youtube.com/@${clean}`,
+		};
+		Linking.openURL(urls[platform]);
+	};
+
+	const generateReport = async (period) => {
+		try {
+			const uid = auth.currentUser.uid;
+			const now = new Date();
+			const currentYear = now.getFullYear();
+			const currentMonth = now.getMonth();
+
+			const [campSnap, expSnap] = await Promise.all([
+				getDocs(query(collection(db, "campaigns"), where("userId", "==", uid))),
+				getDocs(query(collection(db, "expenses"), where("userId", "==", uid))),
+			]);
+			const campaigns = campSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+			const expenses = expSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+			const getMonthIndex = (dateStr) => {
+				if (!dateStr) return -1;
+				const lower = dateStr.toLowerCase();
+				return MONTHS.findIndex((m) => lower.includes(m.toLowerCase()));
+			};
+
+			let filteredCampaigns = campaigns.filter(
+				(c) => c.status === "Completed" || c.status === "Active",
+			);
+			let filteredExpenses = expenses;
+			let periodLabel = "";
+
+			if (period === "month") {
+				periodLabel = `${MONTHS[currentMonth]} ${currentYear}`;
+				filteredCampaigns = filteredCampaigns.filter(
+					(c) => getMonthIndex(c.date) === currentMonth,
+				);
+				filteredExpenses = filteredExpenses.filter(
+					(e) => e.month === currentMonth + 1 && e.year === currentYear,
+				);
+			} else if (period === "semester") {
+				const months = Array.from(
+					{ length: 6 },
+					(_, i) => (currentMonth - i + 12) % 12,
+				);
+				periodLabel = `Last 6 months — ${currentYear}`;
+				filteredCampaigns = filteredCampaigns.filter((c) =>
+					months.includes(getMonthIndex(c.date)),
+				);
+				filteredExpenses = filteredExpenses.filter(
+					(e) =>
+						months.includes((e.month - 1 + 12) % 12) && e.year === currentYear,
+				);
+			} else {
+				periodLabel = `Year ${currentYear}`;
+				filteredExpenses = filteredExpenses.filter(
+					(e) => e.year === currentYear,
+				);
+			}
+
+			const totalIncome = filteredCampaigns.reduce(
+				(sum, c) => sum + c.payment,
+				0,
+			);
+			const totalExpenses = filteredExpenses.reduce(
+				(sum, e) => sum + e.amount,
+				0,
+			);
+			const net = totalIncome - totalExpenses;
+
+			const campaignRows = filteredCampaigns
+				.map(
+					(c) => `
+        <tr>
+          <td>${c.brand}</td>
+          <td>${c.platform}</td>
+          <td>${c.type}</td>
+          <td>${c.date || "—"}</td>
+          <td style="color:#4ade80">+$${c.payment}</td>
+          <td>${c.status}</td>
+        </tr>
+      `,
+				)
+				.join("");
+
+			const expenseRows = filteredExpenses
+				.map(
+					(e) => `
+        <tr>
+          <td>${e.description}</td>
+          <td>${e.category}</td>
+          <td>${e.date || "—"}</td>
+          <td style="color:#f87171">-$${e.amount}</td>
+        </tr>
+      `,
+				)
+				.join("");
+
+			const html = `
+        <html>
+        <head>
+          <meta charset="utf-8"/>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 32px; color: #111; }
+            h1 { font-size: 28px; margin-bottom: 4px; }
+            h2 { font-size: 16px; font-weight: normal; color: #666; margin-bottom: 32px; }
+            h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin: 24px 0 8px; }
+            .kpis { display: flex; gap: 16px; margin-bottom: 32px; }
+            .kpi { flex: 1; padding: 16px; border: 1px solid #e5e7eb; border-radius: 12px; }
+            .kpi-label { font-size: 11px; text-transform: uppercase; color: #888; }
+            .kpi-value { font-size: 24px; font-weight: bold; margin-top: 4px; }
+            table { width: 100%; border-collapse: collapse; font-size: 13px; }
+            th { text-align: left; padding: 8px 12px; background: #f9fafb; border-bottom: 2px solid #e5e7eb; font-size: 11px; text-transform: uppercase; color: #888; }
+            td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; }
+            .footer { margin-top: 48px; font-size: 11px; color: #aaa; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <h1>Creator Flow — Report</h1>
+          <h2>${periodLabel} · ${name || auth.currentUser.email}</h2>
+
+          <div class="kpis">
+            <div class="kpi">
+              <div class="kpi-label">Income</div>
+              <div class="kpi-value" style="color:#4ade80">$${totalIncome}</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">Expenses</div>
+              <div class="kpi-value" style="color:#f87171">-$${totalExpenses}</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">Net</div>
+              <div class="kpi-value" style="color:${net >= 0 ? "#4ade80" : "#f87171"}">$${net}</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">Campaigns</div>
+              <div class="kpi-value">${filteredCampaigns.length}</div>
+            </div>
+          </div>
+
+          <h3>Campaigns</h3>
+          <table>
+            <thead><tr><th>Brand</th><th>Platform</th><th>Type</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody>${campaignRows || "<tr><td colspan='6' style='color:#aaa;text-align:center;padding:20px'>No campaigns</td></tr>"}</tbody>
+          </table>
+
+          <h3>Expenses</h3>
+          <table>
+            <thead><tr><th>Description</th><th>Category</th><th>Date</th><th>Amount</th></tr></thead>
+            <tbody>${expenseRows || "<tr><td colspan='4' style='color:#aaa;text-align:center;padding:20px'>No expenses</td></tr>"}</tbody>
+          </table>
+
+          <div class="footer">Generated by Creator Flow · ${now.toLocaleDateString()}</div>
+        </body>
+        </html>
+      `;
+
+			const { uri } = await Print.printToFileAsync({ html });
+			await Sharing.shareAsync(uri, {
+				UTI: ".pdf",
+				mimeType: "application/pdf",
+			});
+		} catch (e) {
+			showError("Could not generate report: " + e.message);
 		}
 	};
 
@@ -109,7 +310,6 @@ export default function ProfileScreen() {
 				<NotificationBell />
 			</View>
 
-			{/* foto de perfil */}
 			<View style={styles.avatarSection}>
 				<TouchableOpacity
 					style={styles.avatarWrap}
@@ -131,7 +331,35 @@ export default function ProfileScreen() {
 				<Text style={styles.email}>{auth.currentUser.email}</Text>
 			</View>
 
-			{/* campos del perfil */}
+			{(instagram || tiktok || youtube) && !editing && (
+				<View style={styles.platformRow}>
+					{instagram ? (
+						<TouchableOpacity
+							style={styles.platformBtn}
+							onPress={() => openPlatform("instagram", instagram)}
+						>
+							<FontAwesome5 name="instagram" size={18} color="#E1306C" />
+						</TouchableOpacity>
+					) : null}
+					{tiktok ? (
+						<TouchableOpacity
+							style={styles.platformBtn}
+							onPress={() => openPlatform("tiktok", tiktok)}
+						>
+							<FontAwesome5 name="tiktok" size={18} color={colors.text} />
+						</TouchableOpacity>
+					) : null}
+					{youtube ? (
+						<TouchableOpacity
+							style={styles.platformBtn}
+							onPress={() => openPlatform("youtube", youtube)}
+						>
+							<FontAwesome5 name="youtube" size={18} color="#FF0000" />
+						</TouchableOpacity>
+					) : null}
+				</View>
+			)}
+
 			<View style={styles.section}>
 				<Text style={styles.sectionTitle}>Your info</Text>
 				<View style={styles.card}>
@@ -149,7 +377,6 @@ export default function ProfileScreen() {
 							<Text style={styles.fieldValue}>{name || "—"}</Text>
 						)}
 					</View>
-
 					<View style={[styles.field, { borderBottomWidth: 0 }]}>
 						<Text style={styles.fieldLabel}>Handle</Text>
 						{editing ? (
@@ -168,7 +395,75 @@ export default function ProfileScreen() {
 				</View>
 			</View>
 
-			{/* botones */}
+			{editing && (
+				<View style={styles.section}>
+					<Text style={styles.sectionTitle}>Social platforms</Text>
+					<View style={styles.card}>
+						<View style={styles.field}>
+							<Text style={styles.fieldLabel}>Instagram</Text>
+							<TextInput
+								style={styles.fieldInput}
+								value={instagram}
+								onChangeText={setInstagram}
+								placeholder="@handle"
+								placeholderTextColor={colors.inactive}
+								autoCapitalize="none"
+							/>
+						</View>
+						<View style={styles.field}>
+							<Text style={styles.fieldLabel}>TikTok</Text>
+							<TextInput
+								style={styles.fieldInput}
+								value={tiktok}
+								onChangeText={setTiktok}
+								placeholder="@handle"
+								placeholderTextColor={colors.inactive}
+								autoCapitalize="none"
+							/>
+						</View>
+						<View style={[styles.field, { borderBottomWidth: 0 }]}>
+							<Text style={styles.fieldLabel}>YouTube</Text>
+							<TextInput
+								style={styles.fieldInput}
+								value={youtube}
+								onChangeText={setYoutube}
+								placeholder="@handle"
+								placeholderTextColor={colors.inactive}
+								autoCapitalize="none"
+							/>
+						</View>
+					</View>
+				</View>
+			)}
+
+			{!editing && (
+				<View style={styles.section}>
+					<Text style={styles.sectionTitle}>Export report</Text>
+					<View style={styles.reportRow}>
+						{["month", "semester", "year"].map((p) => (
+							<TouchableOpacity
+								key={p}
+								style={styles.reportBtn}
+								onPress={() => generateReport(p)}
+							>
+								<Ionicons
+									name="document-text-outline"
+									size={16}
+									color={colors.active}
+								/>
+								<Text style={styles.reportBtnText}>
+									{p === "month"
+										? "Monthly"
+										: p === "semester"
+											? "Semester"
+											: "Annual"}
+								</Text>
+							</TouchableOpacity>
+						))}
+					</View>
+				</View>
+			)}
+
 			{editing ? (
 				<View style={styles.btnRow}>
 					<TouchableOpacity
@@ -182,20 +477,24 @@ export default function ProfileScreen() {
 					</TouchableOpacity>
 				</View>
 			) : (
-				<TouchableOpacity
-					style={styles.btnEdit}
-					onPress={() => setEditing(true)}
-				>
-					<Ionicons name="pencil-outline" size={16} color={colors.active} />
-					<Text style={styles.btnEditText}>Edit profile</Text>
-				</TouchableOpacity>
+				<View style={styles.btnRow}>
+					<TouchableOpacity
+						style={styles.btnEdit}
+						onPress={() => setEditing(true)}
+					>
+						<Ionicons name="pencil-outline" size={16} color={colors.active} />
+						<Text style={styles.btnEditText}>Edit profile</Text>
+					</TouchableOpacity>
+					<TouchableOpacity
+						style={styles.btnLogout}
+						onPress={() => auth.signOut()}
+					>
+						<Ionicons name="log-out-outline" size={16} color={colors.paused} />
+						<Text style={styles.btnLogoutText}>Sign out</Text>
+					</TouchableOpacity>
+				</View>
 			)}
 
-			{/* logout */}
-			<TouchableOpacity style={styles.btnLogout} onPress={() => auth.signOut()}>
-				<Ionicons name="log-out-outline" size={16} color={colors.paused} />
-				<Text style={styles.btnLogoutText}>Sign out</Text>
-			</TouchableOpacity>
 			<SuccessModal
 				visible={successVisible}
 				message="Your profile has been updated."
@@ -220,11 +519,7 @@ const styles = StyleSheet.create({
 		paddingBottom: 12,
 	},
 	title: { color: colors.text, fontSize: 24, fontWeight: "800" },
-	avatarSection: {
-		alignItems: "center",
-		paddingVertical: 24,
-		gap: 10,
-	},
+	avatarSection: { alignItems: "center", paddingVertical: 24, gap: 10 },
 	avatarWrap: { position: "relative" },
 	avatar: {
 		width: 90,
@@ -261,6 +556,22 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 	},
 	email: { fontSize: 13, color: colors.inactive, letterSpacing: 0.3 },
+	platformRow: {
+		flexDirection: "row",
+		justifyContent: "center",
+		gap: 12,
+		marginBottom: 20,
+	},
+	platformBtn: {
+		width: 44,
+		height: 44,
+		borderRadius: 12,
+		backgroundColor: colors.surface,
+		borderWidth: 1,
+		borderColor: colors.border,
+		alignItems: "center",
+		justifyContent: "center",
+	},
 	section: { paddingHorizontal: 18, marginBottom: 16 },
 	sectionTitle: {
 		fontSize: 11,
@@ -302,11 +613,30 @@ const styles = StyleSheet.create({
 		letterSpacing: 0.3,
 		paddingVertical: 2,
 	},
+	reportRow: { flexDirection: "row", gap: 8 },
+	reportBtn: {
+		flex: 1,
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: 6,
+		height: 46,
+		backgroundColor: colors.backgroundBtn,
+		borderRadius: 14,
+		borderWidth: 1,
+		borderColor: colors.btnBorder,
+	},
+	reportBtnText: {
+		fontSize: 12,
+		fontWeight: "600",
+		color: colors.active,
+		letterSpacing: 0.3,
+	},
 	btnRow: {
 		flexDirection: "row",
 		gap: 10,
 		paddingHorizontal: 18,
-		marginBottom: 12,
+		marginBottom: 40,
 	},
 	btnCancel: {
 		flex: 1,
@@ -341,17 +671,16 @@ const styles = StyleSheet.create({
 		letterSpacing: 0.3,
 	},
 	btnEdit: {
+		flex: 1,
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "center",
 		gap: 6,
-		marginHorizontal: 18,
 		height: 52,
 		backgroundColor: colors.backgroundBtn,
 		borderRadius: 16,
 		borderWidth: 1,
 		borderColor: colors.btnBorder,
-		marginBottom: 12,
 	},
 	btnEditText: {
 		fontSize: 14,
@@ -360,17 +689,16 @@ const styles = StyleSheet.create({
 		letterSpacing: 0.3,
 	},
 	btnLogout: {
+		flex: 1,
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "center",
 		gap: 6,
-		marginHorizontal: 18,
 		height: 52,
 		backgroundColor: "rgba(248,113,113,0.08)",
 		borderRadius: 16,
 		borderWidth: 1,
 		borderColor: "rgba(248,113,113,0.2)",
-		marginBottom: 40,
 	},
 	btnLogoutText: {
 		fontSize: 14,
