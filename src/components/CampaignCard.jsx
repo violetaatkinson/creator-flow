@@ -2,17 +2,25 @@ import { memo, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import Swipeable from "react-native-gesture-handler/Swipeable";
 import { doc, updateDoc, deleteDoc } from "firebase/firestore";
-import { db } from "../firebase/firebaseConfig";
-
+import { db, auth } from "../firebase/firebaseConfig";
+import { Ionicons } from "@expo/vector-icons";
 import { colorALight, colors, colorEdit, colorDelete } from "../constants/colors";
 import PlatformIcon from "./PlatformIcon";
 import ConfirmModal from "./ConfirmModal";
+import { createNotification } from "../services/notificationService";
 
 const statusColors = {
 	Active: colors.active,
 	Pending: colors.pending,
 	Paused: colors.paused,
 	Completed: colors.inactive,
+};
+
+const statusIcon = {
+	Completed: { name: "checkmark-circle-outline", color: colors.active },
+	Active: { name: "play-circle-outline", color: colors.active },
+	Paused: { name: "pause-circle-outline", color: colors.pending },
+	Pending: { name: "time-outline", color: colors.pending },
 };
 
 const STATUSES = ["Pending", "Active", "Paused", "Completed"];
@@ -68,21 +76,34 @@ function formatDate(date) {
 const CampaignCard = memo(({ item, index, onEdit }) => {
 	const [showStatuses, setShowStatuses] = useState(false);
 	const [confirmVisible, setConfirmVisible] = useState(false);
-
 	const avatarColor = avatarColors[index % avatarColors.length];
 
 	const handleStatusChange = async (newStatus) => {
 		try {
 			await updateDoc(doc(db, "campaigns", item.id), { status: newStatus });
+
+			const messages = {
+				Completed: `${item.brand} Campaign completed`,
+				Active: `${item.brand} Campaign is now active`,
+				Paused: `${item.brand} Campaign paused`,
+				Pending: `${item.brand} Campaign set to pending`,
+			};
+
+			await createNotification({
+				userId: auth.currentUser.uid,
+				type: `status_${newStatus.toLowerCase()}`,
+				message: messages[newStatus],
+				campaignId: item.id,
+				amount: newStatus === "Completed" ? item.payment : null,
+			});
+
 			setShowStatuses(false);
 		} catch (error) {
 			console.log(error);
 		}
 	};
 
-	const handleDelete = () => {
-		setConfirmVisible(true);
-	};
+	const handleDelete = () => setConfirmVisible(true);
 
 	const confirmDelete = async () => {
 		try {
@@ -101,7 +122,6 @@ const CampaignCard = memo(({ item, index, onEdit }) => {
 			>
 				<Text style={styles.actionText}>Edit</Text>
 			</TouchableOpacity>
-
 			<TouchableOpacity
 				style={[styles.actionBtn, styles.deleteBtn]}
 				onPress={handleDelete}
@@ -124,7 +144,9 @@ const CampaignCard = memo(({ item, index, onEdit }) => {
 						<Text style={styles.brandName}>{item.brand}</Text>
 						<View style={styles.detailRow}>
 							<PlatformIcon platform={item.platform} size={11} />
-							<Text style={styles.detail}>  {item.type} · {formatDate(item.date)} · ${item.payment}</Text>
+							<Text style={styles.detail}>
+								{item.type} · {formatDate(item.date)} · ${item.payment}
+							</Text>
 						</View>
 					</View>
 					<TouchableOpacity
@@ -144,28 +166,38 @@ const CampaignCard = memo(({ item, index, onEdit }) => {
 
 				{showStatuses && (
 					<View style={styles.statusRow}>
-						{STATUSES.map((s) => (
-							<TouchableOpacity
-								key={s}
-								style={[
-									styles.statusOption,
-									item.status === s && {
-										borderColor: statusColors[s],
-										backgroundColor: `${statusColors[s]}15`,
-									},
-								]}
-								onPress={() => handleStatusChange(s)}
-							>
-								<Text
+						{STATUSES.map((s) => {
+							const icon = statusIcon[s];
+							return (
+								<TouchableOpacity
+									key={s}
 									style={[
-										styles.statusText,
-										item.status === s && { color: statusColors[s] },
+										styles.statusOption,
+										item.status === s && {
+											borderColor: statusColors[s],
+											backgroundColor: `${statusColors[s]}15`,
+										},
 									]}
+									onPress={() => handleStatusChange(s)}
 								>
-									{s}
-								</Text>
-							</TouchableOpacity>
-						))}
+									<Ionicons
+										name={icon.name}
+										size={13}
+										color={
+											item.status === s ? statusColors[s] : colors.inactive
+										}
+									/>
+									<Text
+										style={[
+											styles.statusText,
+											item.status === s && { color: statusColors[s] },
+										]}
+									>
+										{s}
+									</Text>
+								</TouchableOpacity>
+							);
+						})}
 					</View>
 				)}
 			</View>
@@ -191,10 +223,7 @@ const styles = StyleSheet.create({
 		borderWidth: 1,
 		borderColor: colors.border,
 	},
-	row: {
-		flexDirection: "row",
-		alignItems: "center",
-	},
+	row: { flexDirection: "row", alignItems: "center" },
 	avatar: {
 		width: 38,
 		height: 38,
@@ -203,11 +232,7 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		marginRight: 12,
 	},
-	avatarText: {
-		fontSize: 12,
-		fontWeight: "700",
-		letterSpacing: 0.3,
-	},
+	avatarText: { fontSize: 12, fontWeight: "700", letterSpacing: 0.3 },
 	info: { flex: 1 },
 	brandName: {
 		fontSize: 14,
@@ -215,12 +240,13 @@ const styles = StyleSheet.create({
 		color: colors.text,
 		letterSpacing: 0.3,
 	},
-	detail: {
-		fontSize: 12,
-		color: colors.inactive,
+	detailRow: {
+		flexDirection: "row",
+		alignItems: "center",
 		marginTop: 3,
-		letterSpacing: 0.3,
+		gap: 4,
 	},
+	detail: { fontSize: 12, color: colors.inactive, letterSpacing: 0.3 },
 	pill: {
 		paddingHorizontal: 10,
 		paddingVertical: 5,
@@ -228,11 +254,7 @@ const styles = StyleSheet.create({
 		borderWidth: 1,
 		borderColor: "transparent",
 	},
-	pillText: {
-		fontSize: 12,
-		fontWeight: "700",
-		letterSpacing: 0.3,
-	},
+	pillText: { fontSize: 12, fontWeight: "700", letterSpacing: 0.3 },
 	statusRow: {
 		flexDirection: "row",
 		flexWrap: "wrap",
@@ -243,8 +265,11 @@ const styles = StyleSheet.create({
 		borderTopColor: colors.border,
 	},
 	statusOption: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 5,
 		paddingHorizontal: 12,
-		paddingVertical: 5,
+		paddingVertical: 6,
 		borderRadius: 20,
 		borderWidth: 1,
 		borderColor: colors.border,
@@ -282,11 +307,5 @@ const styles = StyleSheet.create({
 		fontWeight: "700",
 		color: colors.text,
 		letterSpacing: 0.3,
-	},
-	detailRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		marginTop: 3,
-		gap: 4,
 	},
 });

@@ -2,7 +2,7 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from "react-nati
 import { useState, useEffect, useCallback } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
-import { collection, query, where, onSnapshot, doc, getDoc } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, getDoc, deleteDoc } from "firebase/firestore";
 import { db, auth } from "../firebase/firebaseConfig";
 import { colors } from "../constants/colors";
 import { Ionicons } from "@expo/vector-icons";
@@ -74,11 +74,28 @@ const deadlineColor = (label) => {
 	return colors.inactive;
 };
 
+const getNotifIcon = (type) => {
+	if (type === "expense_added")
+		return { name: "arrow-down-circle-outline", color: colors.paused };
+	if (type === "campaign_created")
+		return { name: "add-circle-outline", color: colors.active };
+	if (type === "status_completed")
+		return { name: "checkmark-circle-outline", color: colors.active };
+	if (type === "status_active")
+		return { name: "play-circle-outline", color: colors.active };
+	if (type === "status_paused")
+		return { name: "pause-circle-outline", color: colors.pending };
+	if (type === "status_pending")
+		return { name: "time-outline", color: colors.pending };
+	return { name: "notifications-outline", color: colors.inactive };
+};
+
 export default function HomeScreen({ navigation }) {
 	const insets = useSafeAreaInsets();
 	const [userName, setUserName] = useState("");
 	const [campaigns, setCampaigns] = useState([]);
 	const [expenses, setExpenses] = useState([]);
+	const [notifications, setNotifications] = useState([]);
 
 	const now = new Date();
 	const currentMonth = now.getMonth();
@@ -116,6 +133,33 @@ export default function HomeScreen({ navigation }) {
 		});
 	}, []);
 
+	useEffect(() => {
+		const q = query(
+			collection(db, "notifications"),
+			where("userId", "==", auth.currentUser.uid),
+			where("read", "==", false),
+		);
+		return onSnapshot(q, (snap) => {
+			const data = snap.docs
+				.map((d) => ({
+					id: d.id,
+					...d.data(),
+					createdAt: d.data().createdAt?.toDate(),
+				}))
+				.sort((a, b) => b.createdAt - a.createdAt)
+				.slice(0, 3);
+			setNotifications(data);
+		});
+	}, []);
+
+	const markAsRead = async (id) => {
+		try {
+			await deleteDoc(doc(db, "notifications", id));
+		} catch (e) {
+			console.log(e);
+		}
+	};
+
 	const monthCampaigns = campaigns.filter(
 		(c) =>
 			(c.status === "Active" || c.status === "Completed") &&
@@ -152,24 +196,6 @@ export default function HomeScreen({ navigation }) {
 	});
 	const maxCount = Math.max(...chartData.map((d) => d.count), 1);
 
-	const notifications = upcomingDeadlines
-		.filter((c) => {
-			const label = getDeadlineLabel(c.date);
-			return (
-				label === "Overdue" ||
-				label === "Today" ||
-				label === "Tomorrow" ||
-				label.startsWith("In") ||
-				label === "This week" ||
-				label === "Next week"
-			);
-		})
-		.map((c) => ({
-			id: c.id,
-			message: `${c.brand} — ${getDeadlineLabel(c.date)}`,
-			color: deadlineColor(getDeadlineLabel(c.date)),
-		}));
-
 	const firstName = userName.split(" ")[0];
 
 	return (
@@ -187,7 +213,7 @@ export default function HomeScreen({ navigation }) {
 
 			<View style={styles.kpiGrid}>
 				<View style={[styles.kpi, styles.kpiBorderP]}>
-					<Text style={styles.kpiLabel}>This month</Text>
+					<Text style={styles.kpiLabel}>Monthly income</Text>
 					<Text style={[styles.kpiValue, { color: colors.primary }]}>
 						${monthIncome}
 					</Text>
@@ -197,7 +223,7 @@ export default function HomeScreen({ navigation }) {
 					</View>
 				</View>
 				<View style={[styles.kpi, styles.kpiBorderT]}>
-					<Text style={styles.kpiLabel}>Pending</Text>
+					<Text style={styles.kpiLabel}>Pending Payments</Text>
 					<Text style={[styles.kpiValue, { color: colors.pending }]}>
 						${pending}
 					</Text>
@@ -210,14 +236,12 @@ export default function HomeScreen({ navigation }) {
 				</View>
 			</View>
 
-			{/* gráfico — componente */}
 			<CampaignChart
 				chartData={chartData}
 				maxCount={maxCount}
 				currentMonth={currentMonth}
 			/>
 
-			{/* upcoming deadlines */}
 			<View style={styles.section}>
 				<Text style={styles.sectionTitle}>Upcoming deadlines</Text>
 				{upcomingDeadlines.length > 0 ? (
@@ -245,15 +269,66 @@ export default function HomeScreen({ navigation }) {
 			<View style={styles.section}>
 				<Text style={styles.sectionTitle}>Notifications</Text>
 				{notifications.length > 0 ? (
-					notifications.map((n) => (
-						<View key={n.id} style={styles.notifCard}>
-							<View style={[styles.notifDot, { backgroundColor: n.color }]} />
-							<Text style={styles.notifText}>{n.message}</Text>
-						</View>
-					))
+					notifications.map((n) => {
+						const icon = getNotifIcon(n.type);
+						return (
+							<TouchableOpacity
+								key={n.id}
+								style={styles.notifCard}
+								onPress={() => markAsRead(n.id)}
+								activeOpacity={0.8}
+							>
+								<View
+									style={[
+										styles.notifIconWrap,
+										{ backgroundColor: `${icon.color}15` },
+									]}
+								>
+									<Ionicons name={icon.name} size={18} color={icon.color} />
+								</View>
+
+								<View style={{ flex: 1 }}>
+									<Text style={styles.notifText}>{n.message}</Text>
+									<View
+										style={{
+											flexDirection: "row",
+											alignItems: "center",
+											gap: 4,
+											marginTop: 6,
+										}}
+									>
+										{n.detail && (
+											<Text
+												style={[styles.notifDetail, { color: colors.inactive }]}
+											>
+												{n.detail}
+											</Text>
+										)}
+										{n.amount != null && (
+											<Text
+												style={[
+													styles.notifDetail,
+													{
+														color:
+															n.type === "expense_added"
+																? colors.paused
+																: colors.active,
+													},
+												]}
+											>
+												{n.type === "expense_added"
+													? ` -$${n.amount}`
+													: ` +$${n.amount}`}
+											</Text>
+										)}
+									</View>
+								</View>
+							</TouchableOpacity>
+						);
+					})
 				) : (
 					<View style={styles.emptyCard}>
-						<Text style={styles.emptyCardText}>No unread notifications</Text>
+						<Text style={styles.emptyCardText}>No new notifications</Text>
 					</View>
 				)}
 			</View>
@@ -262,7 +337,7 @@ export default function HomeScreen({ navigation }) {
 				<View style={styles.emptyWrap}>
 					<Text style={styles.emptyText}>No campaigns yet.</Text>
 					<TouchableOpacity onPress={() => navigation.navigate("Campanas")}>
-						<Text style={styles.emptyLink}>Create your first one →</Text>
+						<Text style={styles.emptyLink}>Create your first campaign →</Text>
 					</TouchableOpacity>
 				</View>
 			)}
@@ -349,8 +424,21 @@ const styles = StyleSheet.create({
 		gap: 10,
 		marginBottom: 8,
 	},
-	notifDot: { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
-	notifText: { fontSize: 13, color: colors.text, letterSpacing: 0.3, flex: 1 },
+	notifIconWrap: {
+		width: 36,
+		height: 36,
+		borderRadius: 10,
+		alignItems: "center",
+		justifyContent: "center",
+		flexShrink: 0,
+		marginTop: 1,
+	},
+	notifText: { fontSize: 13, color: colors.text, letterSpacing: 0.3 },
+	notifDetail: {
+		fontSize: 12,
+		color: colors.inactive,
+		letterSpacing: 0.3,
+	},
 	emptyCard: {
 		backgroundColor: colors.surface,
 		borderRadius: 14,

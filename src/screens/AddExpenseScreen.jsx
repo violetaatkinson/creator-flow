@@ -7,9 +7,9 @@ import { colors } from "../constants/colors";
 import FormInput from "../components/FormInput";
 import OptionSelector from "../components/OptionSelector";
 import ErrorModal from "../components/ErrorModal";
+import { createNotification } from "../services/notificationService";
 
 const CATEGORIES = ["Production", "Tools", "Travel", "Other"];
-
 const MONTHS_EN = [
 	"Jan",
 	"Feb",
@@ -40,15 +40,10 @@ export default function AddExpenseScreen({ navigation }) {
 
 	const getMonthFromDate = (dateStr) => {
 		if (!dateStr) return new Date().getMonth() + 1;
-
 		const lower = dateStr.toLowerCase();
-
 		for (let i = 0; i < MONTHS_EN.length; i++) {
-			if (lower.includes(MONTHS_EN[i].toLowerCase())) {
-				return i + 1;
-			}
+			if (lower.includes(MONTHS_EN[i].toLowerCase())) return i + 1;
 		}
-
 		return new Date().getMonth() + 1;
 	};
 
@@ -62,10 +57,8 @@ export default function AddExpenseScreen({ navigation }) {
 			showError("Please fill in all fields.");
 			return;
 		}
-
 		try {
 			const month = getMonthFromDate(date);
-
 			await addDoc(collection(db, "expenses"), {
 				description: capitalize(description),
 				amount: Number(amount),
@@ -75,6 +68,15 @@ export default function AddExpenseScreen({ navigation }) {
 				year: new Date().getFullYear(),
 				userId: auth.currentUser.uid,
 				createdAt: new Date(),
+			});
+
+			await createNotification({
+				userId: auth.currentUser.uid,
+				type: "expense_added",
+				message: "New expense",
+				detail: capitalize(description),
+				amount: -Number(amount),
+				campaignId: null,
 			});
 
 			navigation.goBack();
@@ -91,15 +93,9 @@ export default function AddExpenseScreen({ navigation }) {
 		>
 			<View style={styles.titleRow}>
 				<TouchableOpacity onPress={() => navigation.goBack()}>
-					<Ionicons
-						name="chevron-back"
-						size={26}
-						color={colors.text}
-					/>
+					<Ionicons name="chevron-back" size={26} color={colors.text} />
 				</TouchableOpacity>
-
 				<Text style={styles.title}>Add Expense</Text>
-
 				<View style={{ width: 26 }} />
 			</View>
 
@@ -109,7 +105,6 @@ export default function AddExpenseScreen({ navigation }) {
 				value={description}
 				onChangeText={setDescription}
 			/>
-
 			<FormInput
 				label="Amount ($)"
 				placeholder="e.g. 150"
@@ -117,7 +112,6 @@ export default function AddExpenseScreen({ navigation }) {
 				onChangeText={setAmount}
 				keyboardType="numeric"
 			/>
-
 			<FormInput
 				label="Date"
 				placeholder="e.g. 10 Apr"
@@ -126,20 +120,14 @@ export default function AddExpenseScreen({ navigation }) {
 			/>
 
 			<Text style={styles.label}>Category</Text>
-
 			<OptionSelector
 				options={CATEGORIES}
 				selected={category}
 				onSelect={setCategory}
 			/>
 
-			<TouchableOpacity
-				style={styles.btn}
-				onPress={handleAdd}
-			>
-				<Text style={styles.btnText}>
-					Add Expense
-				</Text>
+			<TouchableOpacity style={styles.btn} onPress={handleAdd}>
+				<Text style={styles.btnText}>Add Expense</Text>
 			</TouchableOpacity>
 
 			<ErrorModal
@@ -152,31 +140,20 @@ export default function AddExpenseScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: colors.backgroundScreen,
-	},
-
-	content: {
-		padding: 24,
-		paddingTop: 60,
-		paddingBottom: 60,
-	},
-
+	container: { flex: 1, backgroundColor: colors.backgroundScreen },
+	content: { padding: 24, paddingTop: 60, paddingBottom: 60 },
 	titleRow: {
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "space-between",
 		marginBottom: 32,
 	},
-
 	title: {
 		fontSize: 24,
 		fontWeight: "800",
 		color: colors.text,
 		letterSpacing: 0.3,
 	},
-
 	label: {
 		fontSize: 12,
 		fontWeight: "600",
@@ -185,7 +162,6 @@ const styles = StyleSheet.create({
 		letterSpacing: 0.8,
 		marginBottom: 8,
 	},
-
 	btn: {
 		width: "100%",
 		height: 62,
@@ -197,7 +173,6 @@ const styles = StyleSheet.create({
 		borderColor: colors.btnBorder,
 		marginTop: 8,
 	},
-
 	btnText: {
 		fontSize: 16,
 		fontWeight: "600",
