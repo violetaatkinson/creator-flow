@@ -17,7 +17,7 @@ export const colors = {
 	avatarBg: "rgba(185,110,255,0.15)",
 	avatarT: "#2dd4bf",
 	avatarTB: "#60a5fa",
-	brandAv:"rgba(185,110,255,0.15)"
+	brandAv: "rgba(185,110,255,0.15)",
 };
 
 export const colorALight = {
@@ -30,35 +30,39 @@ export const colorALight = {
 
 export const colorEdit = {
 	bgEdit: "rgba(96,165,250,0.15)",
-	bgEditBorder:"rgba(96,165,250,0.3)"
-}
+	bgEditBorder: "rgba(96,165,250,0.3)",
+};
 
 export const colorDelete = {
 	bgDelete: "rgba(248,113,113,0.15)",
-	bgDeleteBorder:"rgba(248,113,113,0.3)"
-}
+	bgDeleteBorder: "rgba(248,113,113,0.3)",
+};
 
 export const errorModal = {
-	bg:"rgba(0,0,0,0.6)",
-	iconWrap:"rgba(248,113,113,0.1)",
-	btnBg:"rgba(248,113,113,0.15)",
-	btnBorder: "rgba(248,113,113,0.3)"
-}
+	bg: "rgba(0,0,0,0.6)",
+	iconWrap: "rgba(248,113,113,0.1)",
+	btnBg: "rgba(248,113,113,0.15)",
+	btnBorder: "rgba(248,113,113,0.3)",
+};
 
 export const calendarDate = {
-	month:"rgba(185,110,255,0.6)",
-	boxBg:"rgba(185,110,255,0.1)",
-	boxBorder: "rgba(185,110,255,0.2)"
-}
+	month: "rgba(185,110,255,0.6)",
+	boxBg: "rgba(185,110,255,0.1)",
+	boxBorder: "rgba(185,110,255,0.2)",
+};
 
 export const plataforms = {
-	instagram:"#E1306C",
-	youtube:"#FF0000" ,
-}
+	instagram: "#E1306C",
+	youtube: "#FF0000",
+};
 
 export const successModal = {
-	iconWrap:"rgba(74,222,128,0.1)",
-	bgBtn:"rgba(74,222,128,0.15)",
-	btnBorder:"rgba(74,222,128,0.3)",
+	iconWrap: "rgba(74,222,128,0.1)",
+	bgBtn: "rgba(74,222,128,0.15)",
+	btnBorder: "rgba(74,222,128,0.3)",
+};
 
-}
+export const btnLogout = {
+	bg: "rgba(248,113,113,0.08)",
+	btnBorder: "rgba(248,113,113,0.2)",
+};
