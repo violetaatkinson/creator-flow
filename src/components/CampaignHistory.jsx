@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { colors, colorALight } from "../constants/colors";
 import PlatformIcon from "./PlatformIcon";
 
@@ -19,8 +20,8 @@ const avatarColors = [
 ];
 
 export default function CampaignHistory({ campaigns }) {
+	const navigation = useNavigation();
 	const total = campaigns.reduce((sum, c) => sum + c.payment, 0);
-
 	const visible = campaigns.slice(0, 3);
 	const hasMore = campaigns.length > 3;
 
@@ -55,7 +56,10 @@ export default function CampaignHistory({ campaigns }) {
 							<Text style={styles.brandName}>{item.brand}</Text>
 							<View style={styles.detailRow}>
 								<PlatformIcon platform={item.platform} size={11} />
-								<Text style={styles.detail}>  {item.type} · {item.date} · ${item.payment}</Text>
+								<Text style={styles.detail}>
+									{" "}
+									{item.type} · {item.date} · ${item.payment}
+								</Text>
 							</View>
 						</View>
 						<View
@@ -75,9 +79,17 @@ export default function CampaignHistory({ campaigns }) {
 			))}
 
 			{hasMore && (
-				<TouchableOpacity style={styles.seeMore}>
-					<Text style={styles.seeMoreText}>View all</Text>
-					<Ionicons name="chevron-forward" size={16} color={colors.active} />
+				<TouchableOpacity
+					style={styles.reportLink}
+					onPress={() => navigation.navigate("Profile")}
+				>
+					<Text style={styles.reportLinkText}>
+						+{campaigns.length - 3} more campaigns
+					</Text>
+					<View style={styles.reportLinkRow}>
+						<Text style={styles.reportLinkSub}>VIEW FULL REPORT</Text>
+						<Ionicons name="arrow-forward" size={14} color={colors.primary} />
+					</View>
 				</TouchableOpacity>
 			)}
 		</View>
@@ -85,9 +97,7 @@ export default function CampaignHistory({ campaigns }) {
 }
 
 const styles = StyleSheet.create({
-	container: {
-		marginTop: 20,
-	},
+	container: { marginTop: 20 },
 	headerRow: {
 		flexDirection: "row",
 		justifyContent: "space-between",
@@ -108,9 +118,7 @@ const styles = StyleSheet.create({
 		letterSpacing: 0.3,
 		textTransform: "uppercase",
 	},
-	cardWrap: {
-		marginBottom: 8,
-	},
+	cardWrap: { marginBottom: 8 },
 	card: {
 		backgroundColor: colors.surface,
 		borderRadius: 14,
@@ -128,11 +136,7 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		marginRight: 12,
 	},
-	avatarText: {
-		fontSize: 12,
-		fontWeight: "700",
-		letterSpacing: 0.3,
-	},
+	avatarText: { fontSize: 12, fontWeight: "700", letterSpacing: 0.3 },
 	info: { flex: 1 },
 	brandName: {
 		fontSize: 14,
@@ -140,45 +144,55 @@ const styles = StyleSheet.create({
 		color: colors.text,
 		letterSpacing: 0.3,
 	},
-	detail: {
-		fontSize: 12,
-		color: colors.inactive,
-		marginTop: 3,
-		letterSpacing: 0.3,
-	},
-	pill: {
-		paddingHorizontal: 10,
-		paddingVertical: 5,
-		borderRadius: 20,
-	},
-	pillText: {
-		fontSize: 11,
-		fontWeight: "700",
-		letterSpacing: 0.3,
-	},
-	seeMore: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "center",
-		gap: 4,
-		paddingVertical: 12,
-		backgroundColor: colors.surface,
-		borderRadius: 14,
-		borderWidth: 1,
-		borderColor: colors.border,
-		marginTop: 6,
-	},
-	seeMoreText: {
-		fontSize: 14,
-		fontWeight: "600",
-		color: colors.active,
-		letterSpacing: 0.3,
-		marginRight: 2,
-	},
 	detailRow: {
 		flexDirection: "row",
 		alignItems: "center",
 		marginTop: 3,
 		gap: 4,
+	},
+	detail: { fontSize: 11, color: colors.inactive, letterSpacing: 0.3 },
+	pill: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
+	pillText: { fontSize: 11, fontWeight: "700", letterSpacing: 0.3 },
+	seeMore: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: 6,
+		paddingVertical: 12,
+		backgroundColor: colors.backgroundBtn,
+		borderRadius: 14,
+		borderWidth: 1,
+		borderColor: colors.btnBorder,
+		marginTop: 6,
+	},
+	seeMoreText: {
+		fontSize: 13,
+		fontWeight: "600",
+		color: colors.active,
+		letterSpacing: 0.3,
+	},
+	reportLink: {
+		alignItems: "center",
+		paddingVertical: 16,
+		gap: 6,
+		borderTopWidth: 1,
+		borderTopColor: colors.border,
+		marginTop: 8,
+	},
+	reportLinkText: {
+		fontSize: 12,
+		color: colors.inactive,
+		letterSpacing: 0.5,
+	},
+	reportLinkRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 6,
+	},
+	reportLinkSub: {
+		fontSize: 12,
+		fontWeight: "700",
+		color: colors.primary,
+		letterSpacing: 1.2,
 	},
 });

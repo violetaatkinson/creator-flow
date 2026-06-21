@@ -51,7 +51,6 @@ export default function CampaignsScreen({ navigation }) {
     <View style={styles.container}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>Campaigns</Text>
           {campaigns.length > 0 && (
             <Text style={styles.subtitle}>{getSubtitle()}</Text>
           )}
@@ -106,21 +105,12 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingBottom: 12,
   },
-
-  title: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: colors.text,
-    letterSpacing: 0.3,
-  },
-
   subtitle: {
-    fontSize: 13,
+    fontSize: 16,
     color: colors.inactive,
     marginTop: 8,
     letterSpacing: 0.3,
   },
-
   addBtn: {
     backgroundColor: colors.backgroundBtn,
     borderRadius: 20,
@@ -129,24 +119,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.btnBorder,
   },
-
   addBtnText: {
     color: colors.active,
     fontWeight: "700",
     fontSize: 14,
     letterSpacing: 0.3,
   },
-
   scrollContent: {
     paddingHorizontal: 18,
     paddingTop: 14,
     paddingBottom: 40,
   },
-
   section: {
     marginBottom: 12,
   },
-
   sectionTitle: {
     fontSize: 11,
     fontWeight: "600",
@@ -158,7 +144,6 @@ const styles = StyleSheet.create({
   cardWrap: {
     marginBottom: 8,
   },
-
   empty: {
     textAlign: "center",
     color: colors.inactive,

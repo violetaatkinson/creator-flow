@@ -1,9 +1,17 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Modal } from "react-native";
+import {
+	View,
+	Text,
+	ScrollView,
+	StyleSheet,
+	TouchableOpacity,
+	Modal,
+} from "react-native";
 import { useEffect, useState } from "react";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db, auth } from "../firebase/firebaseConfig";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, errorModal } from "../constants/colors";
+import { Ionicons } from "@expo/vector-icons";
 import NotificationBell from "../components/NotificationBell";
 import PlatformIcon from "../components/PlatformIcon";
 
@@ -56,11 +64,10 @@ export default function FinanceScreen({ navigation }) {
 	const getFilteredCampaigns = () => {
 		return campaigns.filter((c) => {
 			if (c.status !== "Completed" && c.status !== "Active") return false;
-			if (period === "Month") {
+			if (period === "Month")
 				return c.date
 					?.toLowerCase()
 					.includes(MONTHS[selectedMonth].toLowerCase());
-			}
 			if (period === "Semester") {
 				const months = Array.from({ length: 6 }, (_, i) =>
 					MONTHS[(selectedMonth - i + 12) % 12].toLowerCase(),
@@ -92,6 +99,9 @@ export default function FinanceScreen({ navigation }) {
 	const totalExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
 	const neto = totalIncome - totalExpenses;
 
+	const visibleExpenses = filteredExpenses.slice(0, 3);
+	const hasMoreExpenses = filteredExpenses.length > 3;
+
 	const campaignsByPlatform = filteredCampaigns.reduce((acc, c) => {
 		const plat = c.platform || "Instagram";
 		if (!acc[plat]) acc[plat] = [];
@@ -109,35 +119,34 @@ export default function FinanceScreen({ navigation }) {
 		>
 			<View style={[styles.header, { paddingTop: insets.top + 12 }]}>
 				<View style={styles.headerTop}>
-					<Text style={styles.title}>Finances</Text>
-					<NotificationBell />
-				</View>
-				<View style={styles.periodLine}>
-					{["Month", "Semester", "Year"].map((p, i) => (
-						<View
-							key={p}
-							style={{ flexDirection: "row", alignItems: "center" }}
-						>
-							{i > 0 && <Text style={styles.dot}> · </Text>}
-							<TouchableOpacity
-								onPress={() => {
-									setPeriod(p);
-									if (p === "Month") setShowMonthModal(true);
-								}}
+					<View style={styles.periodLine}>
+						{["Month", "Semester", "Year"].map((p, i) => (
+							<View
+								key={p}
+								style={{ flexDirection: "row", alignItems: "center" }}
 							>
-								<Text
-									style={[
-										styles.periodItem,
-										period === p && styles.periodItemActive,
-									]}
+								{i > 0 && <Text style={styles.dot}> · </Text>}
+								<TouchableOpacity
+									onPress={() => {
+										setPeriod(p);
+										if (p === "Month") setShowMonthModal(true);
+									}}
 								>
-									{p === "Month"
-										? `${MONTHS[selectedMonth]} ${currentYear}`
-										: p}
-								</Text>
-							</TouchableOpacity>
-						</View>
-					))}
+									<Text
+										style={[
+											styles.periodItem,
+											period === p && styles.periodItemActive,
+										]}
+									>
+										{p === "Month"
+											? `${MONTHS[selectedMonth]} ${currentYear}`
+											: p}
+									</Text>
+								</TouchableOpacity>
+							</View>
+						))}
+					</View>
+					<NotificationBell />
 				</View>
 			</View>
 
@@ -257,8 +266,9 @@ export default function FinanceScreen({ navigation }) {
 				</TouchableOpacity>
 			</View>
 			<View style={styles.card}>
-				{filteredExpenses.map((e, index) => {
-					const isLast = index === filteredExpenses.length - 1;
+				{visibleExpenses.map((e, index) => {
+					const isLast =
+						index === visibleExpenses.length - 1 && !hasMoreExpenses;
 					return (
 						<View
 							key={e.id}
@@ -280,6 +290,21 @@ export default function FinanceScreen({ navigation }) {
 					<Text style={styles.empty}>No expenses for this period</Text>
 				)}
 			</View>
+
+			{hasMoreExpenses && (
+				<TouchableOpacity
+					style={styles.reportLink}
+					onPress={() => navigation.navigate("Profile")}
+				>
+					<Text style={styles.reportLinkText}>
+						+{filteredExpenses.length - 3} more expenses
+					</Text>
+					<View style={styles.reportLinkRow}>
+						<Text style={styles.reportLinkSub}>VIEW FULL REPORT</Text>
+						<Ionicons name="arrow-forward" size={14} color={colors.primary} />
+					</View>
+				</TouchableOpacity>
+			)}
 		</ScrollView>
 	);
 }
@@ -287,21 +312,12 @@ export default function FinanceScreen({ navigation }) {
 const styles = StyleSheet.create({
 	container: { flex: 1, backgroundColor: colors.backgroundScreen },
 	scrollContent: { paddingBottom: 40 },
-	header: {
-		paddingHorizontal: 20,
-		paddingBottom: 12,
-	},
+	header: { paddingHorizontal: 20, paddingBottom: 12 },
 	headerTop: {
 		flexDirection: "row",
 		justifyContent: "space-between",
 		alignItems: "center",
 		marginBottom: 8,
-	},
-	title: {
-		fontSize: 28,
-		fontWeight: "800",
-		color: colors.text,
-		letterSpacing: 0.3,
 	},
 	periodLine: {
 		flexDirection: "row",
@@ -310,13 +326,14 @@ const styles = StyleSheet.create({
 		justifyContent: "flex-start",
 	},
 	periodItem: {
-		fontSize: 13,
+		fontSize: 18,
 		color: colors.inactive,
-		fontWeight: "500",
+		fontWeight: "600",
 		letterSpacing: 0.3,
+		
 	},
 	periodItemActive: { color: colors.primary, fontWeight: "700" },
-	dot: { fontSize: 13, color: colors.inactive },
+	dot: { fontSize: 18, color: colors.inactive },
 	modalOverlay: {
 		flex: 1,
 		backgroundColor: errorModal.bg,
@@ -377,7 +394,7 @@ const styles = StyleSheet.create({
 		borderRadius: 16,
 		borderWidth: 1,
 		borderColor: colors.border,
-		marginBottom: 24,
+		marginBottom: 14,
 		overflow: "hidden",
 		marginHorizontal: 18,
 	},
@@ -499,5 +516,29 @@ const styles = StyleSheet.create({
 		fontSize: 13,
 		paddingVertical: 16,
 		letterSpacing: 0.3,
+	},
+	reportLink: {
+		alignItems: "center",
+		paddingVertical: 16,
+		gap: 6,
+		borderTopWidth: 1,
+		borderTopColor: colors.border,
+		marginTop: 16,
+	},
+	reportLinkText: {
+		fontSize: 11,
+		color: colors.inactive,
+		letterSpacing: 0.5,
+	},
+	reportLinkRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 6,
+	},
+	reportLinkSub: {
+		fontSize: 12,
+		fontWeight: "700",
+		color: colors.primary,
+		letterSpacing: 1.2,
 	},
 });
