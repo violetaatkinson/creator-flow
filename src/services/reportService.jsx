@@ -1,69 +1,115 @@
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { db, auth } from "../firebase/firebaseConfig";
+import { getDB } from "../database/db";
+import { getCurrentUserId } from "../database/authService";
 
-const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const MONTHS = [
+	"Jan",
+	"Feb",
+	"Mar",
+	"Apr",
+	"May",
+	"Jun",
+	"Jul",
+	"Aug",
+	"Sep",
+	"Oct",
+	"Nov",
+	"Dec",
+];
 
 const getMonthIndex = (dateStr) => {
-  if (!dateStr) return -1;
-  return MONTHS.findIndex(m => dateStr.toLowerCase().includes(m.toLowerCase()));
+	if (!dateStr) return -1;
+	return MONTHS.findIndex((m) =>
+		dateStr.toLowerCase().includes(m.toLowerCase()),
+	);
 };
 
 export const generateReport = async (period, userName) => {
-  try {
-    const uid = auth.currentUser.uid;
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
+	try {
+		const db = await getDB();
+		const userId = await getCurrentUserId();
+		const now = new Date();
+		const currentYear = now.getFullYear();
+		const currentMonth = now.getMonth();
 
-    const [campSnap, expSnap] = await Promise.all([
-      getDocs(query(collection(db, "campaigns"), where("userId", "==", uid))),
-      getDocs(query(collection(db, "expenses"), where("userId", "==", uid))),
-    ]);
-    const campaigns = campSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const expenses = expSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+		const campaigns = await db.getAllAsync(
+			"SELECT * FROM campaigns WHERE userId = ?",
+			[userId],
+		);
+		const expenses = await db.getAllAsync(
+			"SELECT * FROM expenses WHERE userId = ?",
+			[userId],
+		);
 
-    let filteredCampaigns = campaigns.filter(c => c.status === "Completed" || c.status === "Active");
-    let filteredExpenses = expenses;
-    let periodLabel = "";
+		let filteredCampaigns = campaigns.filter(
+			(c) => c.status === "Completed" || c.status === "Active",
+		);
+		let filteredExpenses = expenses;
+		let periodLabel = "";
 
-    if (period === "month") {
-      periodLabel = `${MONTHS[currentMonth]} ${currentYear}`;
-      filteredCampaigns = filteredCampaigns.filter(c => getMonthIndex(c.date) === currentMonth);
-      filteredExpenses = filteredExpenses.filter(e => e.month === currentMonth + 1 && e.year === currentYear);
-    } else if (period === "semester") {
-      const months = Array.from({ length: 6 }, (_, i) => (currentMonth - i + 12) % 12);
-      periodLabel = `Last 6 months — ${currentYear}`;
-      filteredCampaigns = filteredCampaigns.filter(c => months.includes(getMonthIndex(c.date)));
-      filteredExpenses = filteredExpenses.filter(e => months.includes((e.month - 1 + 12) % 12) && e.year === currentYear);
-    } else {
-      periodLabel = `Year ${currentYear}`;
-      filteredExpenses = filteredExpenses.filter(e => e.year === currentYear);
-    }
+		if (period === "month") {
+			periodLabel = `${MONTHS[currentMonth]} ${currentYear}`;
+			filteredCampaigns = filteredCampaigns.filter(
+				(c) => getMonthIndex(c.date) === currentMonth,
+			);
+			filteredExpenses = filteredExpenses.filter(
+				(e) => e.month === currentMonth + 1 && e.year === currentYear,
+			);
+		} else if (period === "semester") {
+			const months = Array.from(
+				{ length: 6 },
+				(_, i) => (currentMonth - i + 12) % 12,
+			);
+			periodLabel = `Last 6 months — ${currentYear}`;
+			filteredCampaigns = filteredCampaigns.filter((c) =>
+				months.includes(getMonthIndex(c.date)),
+			);
+			filteredExpenses = filteredExpenses.filter(
+				(e) =>
+					months.includes((e.month - 1 + 12) % 12) && e.year === currentYear,
+			);
+		} else {
+			periodLabel = `Year ${currentYear}`;
+			filteredExpenses = filteredExpenses.filter((e) => e.year === currentYear);
+		}
 
-    const totalIncome = filteredCampaigns.reduce((sum, c) => sum + c.payment, 0);
-    const totalExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
-    const net = totalIncome - totalExpenses;
+		const totalIncome = filteredCampaigns.reduce(
+			(sum, c) => sum + c.payment,
+			0,
+		);
+		const totalExpenses = filteredExpenses.reduce(
+			(sum, e) => sum + e.amount,
+			0,
+		);
+		const net = totalIncome - totalExpenses;
 
-    const campaignRows = filteredCampaigns.map(c => `
+		const campaignRows = filteredCampaigns
+			.map(
+				(c) => `
       <tr>
         <td>${c.brand}</td><td>${c.platform}</td><td>${c.type}</td>
         <td>${c.date || "—"}</td>
         <td style="color:#4ade80">+$${c.payment}</td>
         <td>${c.status}</td>
       </tr>
-    `).join("");
+    `,
+			)
+			.join("");
 
-    const expenseRows = filteredExpenses.map(e => `
+		const expenseRows = filteredExpenses
+			.map(
+				(e) => `
       <tr>
         <td>${e.description}</td><td>${e.category}</td>
         <td>${e.date || "—"}</td>
         <td style="color:#f87171">-$${e.amount}</td>
       </tr>
-    `).join("");
+    `,
+			)
+			.join("");
 
-    const html = `
+		const html = `
       <html><head><meta charset="utf-8"/>
       <style>
         body { font-family: Arial, sans-serif; padding: 32px; color: #111; }
@@ -81,7 +127,7 @@ export const generateReport = async (period, userName) => {
       </style></head>
       <body>
         <h1>Creator Flow — Report</h1>
-        <h2>${periodLabel} · ${userName || auth.currentUser.email}</h2>
+        <h2>${periodLabel} · ${userName || ""}</h2>
         <div class="kpis">
           <div class="kpi"><div class="kpi-label">Income</div><div class="kpi-value" style="color:#4ade80">$${totalIncome}</div></div>
           <div class="kpi"><div class="kpi-label">Expenses</div><div class="kpi-value" style="color:#f87171">-$${totalExpenses}</div></div>
@@ -102,9 +148,9 @@ export const generateReport = async (period, userName) => {
       </body></html>
     `;
 
-    const { uri } = await Print.printToFileAsync({ html });
-    await Sharing.shareAsync(uri, { UTI: ".pdf", mimeType: "application/pdf" });
-  } catch (e) {
-    throw new Error("Could not generate report: " + e.message);
-  }
+		const { uri } = await Print.printToFileAsync({ html });
+		await Sharing.shareAsync(uri, { UTI: ".pdf", mimeType: "application/pdf" });
+	} catch (e) {
+		throw new Error("Could not generate report: " + e.message);
+	}
 };

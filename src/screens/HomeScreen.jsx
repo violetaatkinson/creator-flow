@@ -1,9 +1,15 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
-import { useState, useEffect, useCallback } from "react";
+import {
+	View,
+	Text,
+	ScrollView,
+	StyleSheet,
+	TouchableOpacity,
+} from "react-native";
+import { useState, useCallback } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
-import { collection, query, where, onSnapshot, doc, getDoc, deleteDoc } from "firebase/firestore";
-import { db, auth } from "../firebase/firebaseConfig";
+import { getDB } from "../database/db";
+import { getCurrentUserId } from "../database/authService";
 import { colors } from "../constants/colors";
 import { Ionicons } from "@expo/vector-icons";
 import NotificationBell from "../components/NotificationBell";
@@ -103,58 +109,48 @@ export default function HomeScreen({ navigation }) {
 
 	useFocusEffect(
 		useCallback(() => {
-			const loadProfile = async () => {
+			const loadAll = async () => {
 				try {
-					const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
-					if (snap.exists()) setUserName(snap.data().name || "");
-				} catch (e) {}
+					const db = await getDB();
+					const userId = await getCurrentUserId();
+
+					const user = await db.getFirstAsync(
+						"SELECT name FROM users WHERE id=?",
+						[userId],
+					);
+					setUserName(user?.name || "");
+
+					const camps = await db.getAllAsync(
+						"SELECT * FROM campaigns WHERE userId=?",
+						[userId],
+					);
+					setCampaigns(camps);
+
+					const exps = await db.getAllAsync(
+						"SELECT * FROM expenses WHERE userId=?",
+						[userId],
+					);
+					setExpenses(exps);
+
+					const notifs = await db.getAllAsync(
+						`SELECT * FROM notifications WHERE userId=? AND read=0
+						 ORDER BY createdAt DESC LIMIT 3`,
+						[userId],
+					);
+					setNotifications(notifs);
+				} catch (e) {
+					console.log("HomeScreen error:", e);
+				}
 			};
-			loadProfile();
+			loadAll();
 		}, []),
 	);
 
-	useEffect(() => {
-		const q = query(
-			collection(db, "campaigns"),
-			where("userId", "==", auth.currentUser.uid),
-		);
-		return onSnapshot(q, (snap) => {
-			setCampaigns(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-		});
-	}, []);
-
-	useEffect(() => {
-		const q = query(
-			collection(db, "expenses"),
-			where("userId", "==", auth.currentUser.uid),
-		);
-		return onSnapshot(q, (snap) => {
-			setExpenses(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-		});
-	}, []);
-
-	useEffect(() => {
-		const q = query(
-			collection(db, "notifications"),
-			where("userId", "==", auth.currentUser.uid),
-			where("read", "==", false),
-		);
-		return onSnapshot(q, (snap) => {
-			const data = snap.docs
-				.map((d) => ({
-					id: d.id,
-					...d.data(),
-					createdAt: d.data().createdAt?.toDate(),
-				}))
-				.sort((a, b) => b.createdAt - a.createdAt)
-				.slice(0, 3);
-			setNotifications(data);
-		});
-	}, []);
-
 	const markAsRead = async (id) => {
 		try {
-			await deleteDoc(doc(db, "notifications", id));
+			const db = await getDB();
+			await db.runAsync("DELETE FROM notifications WHERE id=?", [id]);
+			setNotifications((prev) => prev.filter((n) => n.id !== id));
 		} catch (e) {
 			console.log(e);
 		}
@@ -265,7 +261,6 @@ export default function HomeScreen({ navigation }) {
 				)}
 			</View>
 
-			{/* notifications */}
 			<View style={styles.section}>
 				<Text style={styles.sectionTitle}>Notifications</Text>
 				{notifications.length > 0 ? (
@@ -286,7 +281,6 @@ export default function HomeScreen({ navigation }) {
 								>
 									<Ionicons name={icon.name} size={18} color={icon.color} />
 								</View>
-
 								<View style={{ flex: 1 }}>
 									<Text style={styles.notifText}>{n.message}</Text>
 									<View
@@ -317,7 +311,7 @@ export default function HomeScreen({ navigation }) {
 												]}
 											>
 												{n.type === "expense_added"
-													? ` -$${n.amount}`
+													? ` -$${Math.abs(n.amount)}`
 													: ` +$${n.amount}`}
 											</Text>
 										)}
@@ -434,11 +428,7 @@ const styles = StyleSheet.create({
 		marginTop: 1,
 	},
 	notifText: { fontSize: 13, color: colors.text, letterSpacing: 0.3 },
-	notifDetail: {
-		fontSize: 12,
-		color: colors.inactive,
-		letterSpacing: 0.3,
-	},
+	notifDetail: { fontSize: 12, color: colors.inactive, letterSpacing: 0.3 },
 	emptyCard: {
 		backgroundColor: colors.surface,
 		borderRadius: 14,

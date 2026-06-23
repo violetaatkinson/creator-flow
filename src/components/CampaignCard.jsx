@@ -1,8 +1,8 @@
 import { memo, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import Swipeable from "react-native-gesture-handler/Swipeable";
-import { doc, updateDoc, deleteDoc } from "firebase/firestore";
-import { db, auth } from "../firebase/firebaseConfig";
+import { getDB } from "../database/db";
+import { getCurrentUserId } from "../database/authService";
 import { Ionicons } from "@expo/vector-icons";
 import { colorALight, colors, colorEdit, colorDelete } from "../constants/colors";
 import PlatformIcon from "./PlatformIcon";
@@ -73,14 +73,20 @@ function formatDate(date) {
 	return date;
 }
 
-const CampaignCard = memo(({ item, index, onEdit }) => {
+const CampaignCard = memo(({ item, index, onEdit, onUpdate }) => {
 	const [showStatuses, setShowStatuses] = useState(false);
 	const [confirmVisible, setConfirmVisible] = useState(false);
 	const avatarColor = avatarColors[index % avatarColors.length];
 
 	const handleStatusChange = async (newStatus) => {
 		try {
-			await updateDoc(doc(db, "campaigns", item.id), { status: newStatus });
+			const db = await getDB();
+			const userId = await getCurrentUserId();
+
+			await db.runAsync("UPDATE campaigns SET status=? WHERE id=?", [
+				newStatus,
+				item.id,
+			]);
 
 			const messages = {
 				Completed: `${item.brand} Campaign completed`,
@@ -90,7 +96,7 @@ const CampaignCard = memo(({ item, index, onEdit }) => {
 			};
 
 			await createNotification({
-				userId: auth.currentUser.uid,
+				userId,
 				type: `status_${newStatus.toLowerCase()}`,
 				message: messages[newStatus],
 				campaignId: item.id,
@@ -98,6 +104,7 @@ const CampaignCard = memo(({ item, index, onEdit }) => {
 			});
 
 			setShowStatuses(false);
+			onUpdate?.();
 		} catch (error) {
 			console.log(error);
 		}
@@ -107,8 +114,10 @@ const CampaignCard = memo(({ item, index, onEdit }) => {
 
 	const confirmDelete = async () => {
 		try {
-			await deleteDoc(doc(db, "campaigns", item.id));
+			const db = await getDB();
+			await db.runAsync("DELETE FROM campaigns WHERE id=?", [item.id]);
 			setConfirmVisible(false);
+			onUpdate?.();
 		} catch (error) {
 			console.log(error);
 		}

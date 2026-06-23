@@ -1,7 +1,13 @@
-import { View, Text, StyleSheet, TouchableOpacity,ScrollView } from "react-native";
+import {
+	View,
+	Text,
+	StyleSheet,
+	TouchableOpacity,
+	ScrollView,
+} from "react-native";
 import { useState } from "react";
-import { collection, addDoc } from "firebase/firestore";
-import { db, auth } from "../firebase/firebaseConfig";
+import { getDB } from "../database/db";
+import { getCurrentUserId } from "../database/authService";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../constants/colors";
 import FormInput from "../components/FormInput";
@@ -34,24 +40,33 @@ export default function CreateCampaignScreen({ navigation }) {
 			return;
 		}
 		try {
-			await addDoc(collection(db, "campaigns"), {
-				brand: brand.charAt(0).toUpperCase() + brand.slice(1),
-				platform,
-				type,
-				date,
-				payment: Number(payment),
-				status,
-				userId: auth.currentUser.uid,
-				createdAt: new Date(),
-			});
+			const db = await getDB();
+			const userId = await getCurrentUserId();
+			const brandFormatted = brand.charAt(0).toUpperCase() + brand.slice(1);
+			const createdAt = new Date().toISOString();
+
+			const result = await db.runAsync(
+				`INSERT INTO campaigns (userId, brand, platform, type, date, payment, status, createdAt)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+				[
+					userId,
+					brandFormatted,
+					platform,
+					type,
+					date,
+					Number(payment),
+					status,
+					createdAt,
+				],
+			);
 
 			await createNotification({
-				userId: auth.currentUser.uid,
+				userId,
 				type: "campaign_created",
 				message: "New Campaign",
-				detail: brand.charAt(0).toUpperCase() + brand.slice(1),
+				detail: brandFormatted,
 				amount: Number(payment),
-				campaignId: null,
+				campaignId: result.lastInsertRowId,
 			});
 
 			navigation.goBack();

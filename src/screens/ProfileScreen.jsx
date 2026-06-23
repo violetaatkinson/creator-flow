@@ -1,9 +1,18 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image, TextInput, Linking } from "react-native";
+import {
+	View,
+	Text,
+	ScrollView,
+	StyleSheet,
+	TouchableOpacity,
+	Image,
+	TextInput,
+	Linking,
+} from "react-native";
 import { useState, useEffect } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
-import { doc, setDoc, getDoc } from "firebase/firestore";
-import { db, auth } from "../firebase/firebaseConfig";
+import { getDB } from "../database/db";
+import { getCurrentUser, logout } from "../database/authService";
 import { colors, plataforms, btnLogout } from "../constants/colors";
 import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import NotificationBell from "../components/NotificationBell";
@@ -11,8 +20,7 @@ import SuccessModal from "../components/SuccessModal";
 import ErrorModal from "../components/ErrorModal";
 import { generateReport } from "../services/reportService";
 
-
-export default function ProfileScreen() {
+export default function ProfileScreen({ onLogout }) {
 	const insets = useSafeAreaInsets();
 	const [name, setName] = useState("");
 	const [handle, setHandle] = useState("");
@@ -23,6 +31,7 @@ export default function ProfileScreen() {
 	const [photoUri, setPhotoUri] = useState(null);
 	const [editing, setEditing] = useState(false);
 	const [loading, setLoading] = useState(true);
+	const [currentUser, setCurrentUser] = useState(null);
 	const [successVisible, setSuccessVisible] = useState(false);
 	const [errorVisible, setErrorVisible] = useState(false);
 	const [errorMessage, setErrorMessage] = useState("");
@@ -35,16 +44,16 @@ export default function ProfileScreen() {
 	useEffect(() => {
 		const loadProfile = async () => {
 			try {
-				const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
-				if (snap.exists()) {
-					const d = snap.data();
-					setName(d.name || "");
-					setHandle(d.handle || "");
-					setBio(d.bio || "");
-					setInstagram(d.instagram || "");
-					setTiktok(d.tiktok || "");
-					setYoutube(d.youtube || "");
-					setPhotoUri(d.photoUri || null);
+				const user = await getCurrentUser();
+				setCurrentUser(user);
+				if (user) {
+					setName(user.name || "");
+					setHandle(user.handle || "");
+					setBio(user.bio || "");
+					setInstagram(user.instagram || "");
+					setTiktok(user.tiktok || "");
+					setYoutube(user.youtube || "");
+					setPhotoUri(user.photoUri || null);
 				}
 			} catch (e) {
 				console.log(e);
@@ -72,22 +81,32 @@ export default function ProfileScreen() {
 
 	const handleSave = async () => {
 		try {
-			await setDoc(doc(db, "users", auth.currentUser.uid), {
-				name,
-				handle,
-				bio,
-				instagram,
-				tiktok,
-				youtube,
-				photoUri,
-				email: auth.currentUser.email,
-				updatedAt: new Date(),
-			});
+			const db = await getDB();
+			await db.runAsync(
+				`UPDATE users SET name=?, handle=?, bio=?, instagram=?, tiktok=?, youtube=?, photoUri=?, updatedAt=?
+				 WHERE id=?`,
+				[
+					name,
+					handle,
+					bio,
+					instagram,
+					tiktok,
+					youtube,
+					photoUri || "",
+					new Date().toISOString(),
+					currentUser.id,
+				],
+			);
 			setEditing(false);
 			setSuccessVisible(true);
 		} catch (e) {
 			showError(e.message);
 		}
+	};
+
+	const handleLogout = async () => {
+		await logout();
+		onLogout();
 	};
 
 	const openPlatform = (platform, username) => {
@@ -100,7 +119,6 @@ export default function ProfileScreen() {
 		};
 		Linking.openURL(urls[platform]);
 	};
-
 
 	const initials = name
 		? name
@@ -147,7 +165,7 @@ export default function ProfileScreen() {
 						{bio ? <Text style={styles.profileBio}>{bio}</Text> : null}
 					</View>
 				) : (
-					<Text style={styles.email}>{auth.currentUser.email}</Text>
+					<Text style={styles.email}>{currentUser?.email}</Text>
 				)}
 			</View>
 
@@ -158,7 +176,11 @@ export default function ProfileScreen() {
 							style={styles.platformBtn}
 							onPress={() => openPlatform("instagram", instagram)}
 						>
-							<FontAwesome5 name="instagram" size={18} color={plataforms.instagram} />
+							<FontAwesome5
+								name="instagram"
+								size={18}
+								color={plataforms.instagram}
+							/>
 						</TouchableOpacity>
 					) : null}
 					{tiktok ? (
@@ -174,7 +196,11 @@ export default function ProfileScreen() {
 							style={styles.platformBtn}
 							onPress={() => openPlatform("youtube", youtube)}
 						>
-							<FontAwesome5 name="youtube" size={18} color={plataforms.youtube} />
+							<FontAwesome5
+								name="youtube"
+								size={18}
+								color={plataforms.youtube}
+							/>
 						</TouchableOpacity>
 					) : null}
 				</View>
@@ -260,7 +286,6 @@ export default function ProfileScreen() {
 				</View>
 			)}
 
-			
 			{!editing && (
 				<View style={styles.section}>
 					<Text style={styles.sectionTitle}>Export report</Text>
@@ -269,7 +294,9 @@ export default function ProfileScreen() {
 							<TouchableOpacity
 								key={p}
 								style={styles.reportBtn}
-								onPress={() => generateReport(p, name).catch(e => showError(e.message))}
+								onPress={() =>
+									generateReport(p, name).catch((e) => showError(e.message))
+								}
 							>
 								<Ionicons
 									name="document-text-outline"
@@ -310,10 +337,7 @@ export default function ProfileScreen() {
 						<Ionicons name="pencil-outline" size={16} color={colors.primary} />
 						<Text style={styles.btnEditText}>Edit profile</Text>
 					</TouchableOpacity>
-					<TouchableOpacity
-						style={styles.btnLogout}
-						onPress={() => auth.signOut()}
-					>
+					<TouchableOpacity style={styles.btnLogout} onPress={handleLogout}>
 						<Ionicons name="log-out-outline" size={16} color={colors.paused} />
 						<Text style={styles.btnLogoutText}>Sign out</Text>
 					</TouchableOpacity>
@@ -386,7 +410,13 @@ const styles = StyleSheet.create({
 		color: colors.primary,
 		letterSpacing: 0.3,
 	},
-	profileHandle: { fontSize: 14, color: colors.inactive, letterSpacing: 0.3, marginTop:6, marginBottom:6 },
+	profileHandle: {
+		fontSize: 14,
+		color: colors.inactive,
+		letterSpacing: 0.3,
+		marginTop: 6,
+		marginBottom: 6,
+	},
 	profileBio: {
 		fontSize: 13,
 		color: colors.text,

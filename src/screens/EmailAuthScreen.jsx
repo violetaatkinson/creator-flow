@@ -1,10 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useState } from "react";
-import {
-	createUserWithEmailAndPassword,
-	signInWithEmailAndPassword,
-} from "firebase/auth";
-import { auth } from "../firebase/firebaseConfig";
+import { login, register } from "../database/authService";
 
 import { colors } from "../constants/colors";
 import Logo from "../components/Logo";
@@ -12,7 +8,7 @@ import CustomInput from "../components/CustomInput";
 import SignBtn from "../components/SignBtn";
 import ErrorModal from "../components/ErrorModal";
 
-export default function EmailAuthScreen({ navigation }) {
+export default function EmailAuthScreen({ navigation, onLogin }) {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [isLogin, setIsLogin] = useState(false);
@@ -26,27 +22,20 @@ export default function EmailAuthScreen({ navigation }) {
 	};
 
 	const handleSubmit = async () => {
+		if (!email || !password) {
+			showError("Please enter your email and password.");
+			return;
+		}
 		try {
+			let user;
 			if (isLogin) {
-				await signInWithEmailAndPassword(auth, email, password);
+				user = await login(email, password);
 			} else {
-				await createUserWithEmailAndPassword(auth, email, password);
+				user = await register(email, password);
 			}
+			onLogin(user);
 		} catch (error) {
-			console.log("CODE:", error.code);
-			console.log("MESSAGE:", error.message);
-
-			if (error.code === "auth/invalid-email") {
-				showError("Please enter a valid email.");
-			} else if (error.code === "auth/wrong-password") {
-				showError("Incorrect password.");
-			} else if (error.code === "auth/user-not-found") {
-				showError("No account found with this email.");
-			} else if (error.code === "auth/email-already-in-use") {
-				showError("This email is already registered.");
-			} else {
-				showError("Something went wrong. Please try again.");
-			}
+			showError(error.message);
 		}
 	};
 

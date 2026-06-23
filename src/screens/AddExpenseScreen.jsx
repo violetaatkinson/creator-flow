@@ -1,7 +1,13 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import {
+	View,
+	Text,
+	StyleSheet,
+	TouchableOpacity,
+	ScrollView,
+} from "react-native";
 import { useState } from "react";
-import { collection, addDoc } from "firebase/firestore";
-import { db, auth } from "../firebase/firebaseConfig";
+import { getDB } from "../database/db";
+import { getCurrentUserId } from "../database/authService";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../constants/colors";
 import FormInput from "../components/FormInput";
@@ -58,23 +64,31 @@ export default function AddExpenseScreen({ navigation }) {
 			return;
 		}
 		try {
+			const db = await getDB();
+			const userId = await getCurrentUserId();
 			const month = getMonthFromDate(date);
-			await addDoc(collection(db, "expenses"), {
-				description: capitalize(description),
-				amount: Number(amount),
-				category,
-				date,
-				month,
-				year: new Date().getFullYear(),
-				userId: auth.currentUser.uid,
-				createdAt: new Date(),
-			});
+			const descFormatted = capitalize(description);
+
+			await db.runAsync(
+				`INSERT INTO expenses (userId, description, amount, category, date, month, year, createdAt)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+				[
+					userId,
+					descFormatted,
+					Number(amount),
+					category,
+					date,
+					month,
+					new Date().getFullYear(),
+					new Date().toISOString(),
+				],
+			);
 
 			await createNotification({
-				userId: auth.currentUser.uid,
+				userId,
 				type: "expense_added",
 				message: "New expense",
-				detail: capitalize(description),
+				detail: descFormatted,
 				amount: -Number(amount),
 				campaignId: null,
 			});

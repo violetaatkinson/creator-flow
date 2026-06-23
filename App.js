@@ -4,10 +4,10 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "./src/firebase/firebaseConfig";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { initDB } from "./src/database/db";
+import { getCurrentUser } from "./src/database/authService";
 import { colors } from "./src/constants/colors";
 
 import TabNavigator from "./src/navigation/TabNavigator";
@@ -24,11 +24,18 @@ export default function App() {
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		const unsubscribe = onAuthStateChanged(auth, (user) => {
-			setUser(user);
-			setLoading(false);
-		});
-		return unsubscribe;
+		const init = async () => {
+			try {
+				await initDB();
+				const currentUser = await getCurrentUser();
+				setUser(currentUser);
+			} catch (e) {
+				console.log("Init error:", e);
+			} finally {
+				setLoading(false);
+			}
+		};
+		init();
 	}, []);
 
 	if (loading) {
@@ -54,7 +61,9 @@ export default function App() {
 					<Stack.Navigator screenOptions={{ headerShown: false }}>
 						{user ? (
 							<>
-								<Stack.Screen name="Main" component={TabNavigator} />
+								<Stack.Screen name="Main">
+									{() => <TabNavigator onLogout={() => setUser(null)} />}
+								</Stack.Screen>
 								<Stack.Screen
 									name="CreateCampaign"
 									component={CreateCampaignScreen}
@@ -68,7 +77,9 @@ export default function App() {
 						) : (
 							<>
 								<Stack.Screen name="Login" component={LoginScreen} />
-								<Stack.Screen name="EmailAuth" component={EmailAuthScreen} />
+								<Stack.Screen name="EmailAuth">
+									{(props) => <EmailAuthScreen {...props} onLogin={setUser} />}
+								</Stack.Screen>
 							</>
 						)}
 					</Stack.Navigator>

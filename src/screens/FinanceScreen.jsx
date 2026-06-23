@@ -6,9 +6,10 @@ import {
 	TouchableOpacity,
 	Modal,
 } from "react-native";
-import { useEffect, useState } from "react";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
-import { db, auth } from "../firebase/firebaseConfig";
+import { useState, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import { getDB } from "../database/db";
+import { getCurrentUserId } from "../database/authService";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, errorModal } from "../constants/colors";
 import { Ionicons } from "@expo/vector-icons";
@@ -39,27 +40,29 @@ export default function FinanceScreen({ navigation }) {
 	const [period, setPeriod] = useState("Month");
 	const [showMonthModal, setShowMonthModal] = useState(false);
 
-	useEffect(() => {
-		const q = query(
-			collection(db, "campaigns"),
-			where("userId", "==", auth.currentUser.uid),
-		);
-		const unsub = onSnapshot(q, (snap) => {
-			setCampaigns(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-		});
-		return unsub;
-	}, []);
-
-	useEffect(() => {
-		const q = query(
-			collection(db, "expenses"),
-			where("userId", "==", auth.currentUser.uid),
-		);
-		const unsub = onSnapshot(q, (snap) => {
-			setExpenses(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-		});
-		return unsub;
-	}, []);
+	useFocusEffect(
+		useCallback(() => {
+			const loadData = async () => {
+				try {
+					const db = await getDB();
+					const userId = await getCurrentUserId();
+					const camps = await db.getAllAsync(
+						"SELECT * FROM campaigns WHERE userId=?",
+						[userId],
+					);
+					const exps = await db.getAllAsync(
+						"SELECT * FROM expenses WHERE userId=?",
+						[userId],
+					);
+					setCampaigns(camps);
+					setExpenses(exps);
+				} catch (e) {
+					console.log("FinanceScreen error:", e);
+				}
+			};
+			loadData();
+		}, []),
+	);
 
 	const getFilteredCampaigns = () => {
 		return campaigns.filter((c) => {
@@ -330,7 +333,6 @@ const styles = StyleSheet.create({
 		color: colors.inactive,
 		fontWeight: "600",
 		letterSpacing: 0.3,
-		
 	},
 	periodItemActive: { color: colors.primary, fontWeight: "700" },
 	dot: { fontSize: 18, color: colors.inactive },
@@ -525,16 +527,8 @@ const styles = StyleSheet.create({
 		borderTopColor: colors.border,
 		marginTop: 16,
 	},
-	reportLinkText: {
-		fontSize: 11,
-		color: colors.inactive,
-		letterSpacing: 0.5,
-	},
-	reportLinkRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 6,
-	},
+	reportLinkText: { fontSize: 11, color: colors.inactive, letterSpacing: 0.5 },
+	reportLinkRow: { flexDirection: "row", alignItems: "center", gap: 6 },
 	reportLinkSub: {
 		fontSize: 12,
 		fontWeight: "700",
