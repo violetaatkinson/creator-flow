@@ -26,11 +26,17 @@ export default function App() {
 	useEffect(() => {
 		const init = async () => {
 			try {
-				await initDB();
+				await Promise.race([
+					initDB(),
+					new Promise((_, reject) =>
+						setTimeout(() => reject(new Error("initDB timeout")), 5000),
+					),
+				]);
 				const currentUser = await getCurrentUser();
 				setUser(currentUser);
 			} catch (e) {
 				console.log("Init error:", e);
+				setUser(null); 
 			} finally {
 				setLoading(false);
 			}
