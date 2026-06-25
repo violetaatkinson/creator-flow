@@ -1,15 +1,9 @@
-import {
-	View,
-	Text,
-	ScrollView,
-	StyleSheet,
-	TouchableOpacity,
-} from "react-native";
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
 import { useState, useCallback } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { getDB } from "../database/db";
-import { getCurrentUserId } from "../database/authService";
+import { auth } from "../firebase/firebaseConfig";
 import { colors } from "../constants/colors";
 import { Ionicons } from "@expo/vector-icons";
 import NotificationBell from "../components/NotificationBell";
@@ -112,30 +106,30 @@ export default function HomeScreen({ navigation }) {
 			const loadAll = async () => {
 				try {
 					const db = await getDB();
-					const userId = await getCurrentUserId();
+					const uid = auth.currentUser.uid;
 
 					const user = await db.getFirstAsync(
-						"SELECT name FROM users WHERE id=?",
-						[userId],
+						"SELECT name FROM users WHERE uid=?",
+						[uid],
 					);
 					setUserName(user?.name || "");
 
 					const camps = await db.getAllAsync(
 						"SELECT * FROM campaigns WHERE userId=?",
-						[userId],
+						[uid],
 					);
 					setCampaigns(camps);
 
 					const exps = await db.getAllAsync(
 						"SELECT * FROM expenses WHERE userId=?",
-						[userId],
+						[uid],
 					);
 					setExpenses(exps);
 
 					const notifs = await db.getAllAsync(
 						`SELECT * FROM notifications WHERE userId=? AND read=0
 						 ORDER BY createdAt DESC LIMIT 3`,
-						[userId],
+						[uid],
 					);
 					setNotifications(notifs);
 				} catch (e) {
@@ -191,7 +185,6 @@ export default function HomeScreen({ navigation }) {
 		};
 	});
 	const maxCount = Math.max(...chartData.map((d) => d.count), 1);
-
 	const firstName = userName.split(" ")[0];
 
 	return (

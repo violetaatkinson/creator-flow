@@ -1,15 +1,8 @@
-import {
-	View,
-	Text,
-	ScrollView,
-	StyleSheet,
-	TouchableOpacity,
-	Modal,
-} from "react-native";
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Modal } from "react-native";
 import { useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { getDB } from "../database/db";
-import { getCurrentUserId } from "../database/authService";
+import { auth } from "../firebase/firebaseConfig";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, errorModal } from "../constants/colors";
 import { Ionicons } from "@expo/vector-icons";
@@ -45,14 +38,14 @@ export default function FinanceScreen({ navigation }) {
 			const loadData = async () => {
 				try {
 					const db = await getDB();
-					const userId = await getCurrentUserId();
+					const uid = auth.currentUser.uid;
 					const camps = await db.getAllAsync(
 						"SELECT * FROM campaigns WHERE userId=?",
-						[userId],
+						[uid],
 					);
 					const exps = await db.getAllAsync(
 						"SELECT * FROM expenses WHERE userId=?",
-						[userId],
+						[uid],
 					);
 					setCampaigns(camps);
 					setExpenses(exps);
@@ -101,7 +94,6 @@ export default function FinanceScreen({ navigation }) {
 	const totalIncome = filteredCampaigns.reduce((sum, c) => sum + c.payment, 0);
 	const totalExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
 	const neto = totalIncome - totalExpenses;
-
 	const visibleExpenses = filteredExpenses.slice(0, 3);
 	const hasMoreExpenses = filteredExpenses.length > 3;
 

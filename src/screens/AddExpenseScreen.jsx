@@ -1,13 +1,7 @@
-import {
-	View,
-	Text,
-	StyleSheet,
-	TouchableOpacity,
-	ScrollView,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { useState } from "react";
 import { getDB } from "../database/db";
-import { getCurrentUserId } from "../database/authService";
+import { auth } from "../firebase/firebaseConfig";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../constants/colors";
 import FormInput from "../components/FormInput";
@@ -65,7 +59,7 @@ export default function AddExpenseScreen({ navigation }) {
 		}
 		try {
 			const db = await getDB();
-			const userId = await getCurrentUserId();
+			const uid = auth.currentUser.uid;
 			const month = getMonthFromDate(date);
 			const descFormatted = capitalize(description);
 
@@ -73,7 +67,7 @@ export default function AddExpenseScreen({ navigation }) {
 				`INSERT INTO expenses (userId, description, amount, category, date, month, year, createdAt)
 				 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 				[
-					userId,
+					uid,
 					descFormatted,
 					Number(amount),
 					category,
@@ -85,7 +79,7 @@ export default function AddExpenseScreen({ navigation }) {
 			);
 
 			await createNotification({
-				userId,
+				userId: uid,
 				type: "expense_added",
 				message: "New expense",
 				detail: descFormatted,

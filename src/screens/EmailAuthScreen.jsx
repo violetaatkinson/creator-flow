@@ -1,6 +1,11 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useState } from "react";
-import { login, register } from "../database/authService";
+import {
+	createUserWithEmailAndPassword,
+	signInWithEmailAndPassword,
+} from "firebase/auth";
+import { auth } from "../firebase/firebaseConfig";
+import * as Yup from "yup";
 
 import { colors } from "../constants/colors";
 import Logo from "../components/Logo";
@@ -8,11 +13,32 @@ import CustomInput from "../components/CustomInput";
 import SignBtn from "../components/SignBtn";
 import ErrorModal from "../components/ErrorModal";
 
-export default function EmailAuthScreen({ navigation, onLogin }) {
+const authSchema = Yup.object().shape({
+	email: Yup.string()
+		.email("Please enter a valid email.")
+		.required("Email is required."),
+	password: Yup.string()
+		.min(6, "Password must be at least 6 characters.")
+		.required("Password is required."),
+});
+
+const getFirebaseError = (code) => {
+	if (code === "auth/invalid-email") return "Please enter a valid email.";
+	if (code === "auth/wrong-password") return "Incorrect password.";
+	if (code === "auth/invalid-credential") return "Incorrect email or password.";
+	if (code === "auth/user-not-found")
+		return "No account found with this email.";
+	if (code === "auth/email-already-in-use")
+		return "This email is already registered.";
+	if (code === "auth/weak-password")
+		return "Password must be at least 6 characters.";
+	return "Something went wrong. Please try again.";
+};
+
+export default function EmailAuthScreen({ navigation }) {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [isLogin, setIsLogin] = useState(false);
-
 	const [errorVisible, setErrorVisible] = useState(false);
 	const [errorMessage, setErrorMessage] = useState("");
 
@@ -22,20 +48,20 @@ export default function EmailAuthScreen({ navigation, onLogin }) {
 	};
 
 	const handleSubmit = async () => {
-		if (!email || !password) {
-			showError("Please enter your email and password.");
-			return;
-		}
 		try {
-			let user;
+			await authSchema.validate({ email, password });
+
 			if (isLogin) {
-				user = await login(email, password);
+				await signInWithEmailAndPassword(auth, email, password);
 			} else {
-				user = await register(email, password);
+				await createUserWithEmailAndPassword(auth, email, password);
 			}
-			onLogin(user);
 		} catch (error) {
-			showError(error.message);
+			if (error.name === "ValidationError") {
+				showError(error.message);
+			} else {
+				showError(getFirebaseError(error.code));
+			}
 		}
 	};
 
@@ -54,14 +80,12 @@ export default function EmailAuthScreen({ navigation, onLogin }) {
 					autoCapitalize="none"
 					keyboardType="email-address"
 				/>
-
 				<CustomInput
 					placeholder="Password"
 					value={password}
 					onChangeText={setPassword}
 					secureTextEntry
 				/>
-
 				<SignBtn
 					title={isLogin ? "Sign in" : "Sign up"}
 					onPress={handleSubmit}

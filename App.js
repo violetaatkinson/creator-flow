@@ -6,8 +6,9 @@ import { View, ActivityIndicator } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "./src/firebase/firebaseConfig";
 import { initDB } from "./src/database/db";
-import { getCurrentUser } from "./src/database/authService";
 import { colors } from "./src/constants/colors";
 
 import TabNavigator from "./src/navigation/TabNavigator";
@@ -24,24 +25,13 @@ export default function App() {
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		const init = async () => {
-			try {
-				await Promise.race([
-					initDB(),
-					new Promise((_, reject) =>
-						setTimeout(() => reject(new Error("initDB timeout")), 5000),
-					),
-				]);
-				const currentUser = await getCurrentUser();
-				setUser(currentUser);
-			} catch (e) {
-				console.log("Init error:", e);
-				setUser(null); 
-			} finally {
-				setLoading(false);
-			}
-		};
-		init();
+		initDB().catch((e) => console.log("initDB error:", e));
+
+		const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+			setUser(firebaseUser);
+			setLoading(false);
+		});
+		return unsubscribe;
 	}, []);
 
 	if (loading) {
@@ -83,9 +73,7 @@ export default function App() {
 						) : (
 							<>
 								<Stack.Screen name="Login" component={LoginScreen} />
-								<Stack.Screen name="EmailAuth">
-									{(props) => <EmailAuthScreen {...props} onLogin={setUser} />}
-								</Stack.Screen>
+								<Stack.Screen name="EmailAuth" component={EmailAuthScreen} />
 							</>
 						)}
 					</Stack.Navigator>

@@ -3,7 +3,7 @@ import { useState, useCallback } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { getDB } from "../database/db";
-import { getCurrentUserId } from "../database/authService";
+import { auth } from "../firebase/firebaseConfig";
 import { colors } from "../constants/colors";
 import { Ionicons } from "@expo/vector-icons";
 import Swipeable from "react-native-gesture-handler/Swipeable";
@@ -31,8 +31,7 @@ const timeAgo = (dateStr) => {
 	if (diff < 60) return `${diff}m ago`;
 	const hours = Math.round(diff / 60);
 	if (hours < 24) return `${hours}h ago`;
-	const days = Math.round(hours / 24);
-	return `${days}d ago`;
+	return `${Math.round(hours / 24)}d ago`;
 };
 
 export default function NotificationScreen() {
@@ -44,11 +43,10 @@ export default function NotificationScreen() {
 			const loadNotifications = async () => {
 				try {
 					const db = await getDB();
-					const userId = await getCurrentUserId();
+					const uid = auth.currentUser.uid;
 					const data = await db.getAllAsync(
-						`SELECT * FROM notifications WHERE userId=? AND read=0
-						 ORDER BY createdAt DESC`,
-						[userId]
+						`SELECT * FROM notifications WHERE userId=? AND read=0 ORDER BY createdAt DESC`,
+						[uid],
 					);
 					setNotifications(data);
 				} catch (e) {
@@ -56,7 +54,7 @@ export default function NotificationScreen() {
 				}
 			};
 			loadNotifications();
-		}, [])
+		}, []),
 	);
 
 	const markAsRead = async (id) => {
@@ -72,8 +70,10 @@ export default function NotificationScreen() {
 	const clearAll = async () => {
 		try {
 			const db = await getDB();
-			const userId = await getCurrentUserId();
-			await db.runAsync("DELETE FROM notifications WHERE userId=? AND read=0", [userId]);
+			const uid = auth.currentUser.uid;
+			await db.runAsync("DELETE FROM notifications WHERE userId=? AND read=0", [
+				uid,
+			]);
 			setNotifications([]);
 		} catch (e) {
 			console.log(e);
@@ -99,7 +99,11 @@ export default function NotificationScreen() {
 			{notifications.length === 0 ? (
 				<View style={styles.emptyWrap}>
 					<View style={styles.emptyIconWrap}>
-						<Ionicons name="notifications-outline" size={36} color={colors.primary} />
+						<Ionicons
+							name="notifications-outline"
+							size={36}
+							color={colors.primary}
+						/>
 					</View>
 					<Text style={styles.emptyText}>All clear!</Text>
 					<Text style={styles.emptySub}>No pending updates or alerts.</Text>
@@ -109,24 +113,61 @@ export default function NotificationScreen() {
 					{notifications.map((n) => {
 						const icon = typeIcon[n.type] || defaultIcon;
 						return (
-							<Swipeable key={n.id} renderRightActions={() => renderRightActions(n.id)}>
-								<TouchableOpacity style={styles.card} onPress={() => markAsRead(n.id)} activeOpacity={0.8}>
-									<View style={[styles.iconWrap, { backgroundColor: `${icon.color}15` }]}>
+							<Swipeable
+								key={n.id}
+								renderRightActions={() => renderRightActions(n.id)}
+							>
+								<TouchableOpacity
+									style={styles.card}
+									onPress={() => markAsRead(n.id)}
+									activeOpacity={0.8}
+								>
+									<View
+										style={[
+											styles.iconWrap,
+											{ backgroundColor: `${icon.color}15` },
+										]}
+									>
 										<Ionicons name={icon.name} size={20} color={icon.color} />
 									</View>
 									<View style={styles.content}>
 										<Text style={styles.message}>{n.message}</Text>
-										<View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 6 }}>
+										<View
+											style={{
+												flexDirection: "row",
+												alignItems: "center",
+												gap: 4,
+												marginTop: 6,
+											}}
+										>
 											{n.detail && (
-												<Text style={[styles.detail, { color: colors.inactive }]}>{n.detail}</Text>
+												<Text
+													style={[styles.detail, { color: colors.inactive }]}
+												>
+													{n.detail}
+												</Text>
 											)}
 											{n.amount != null && (
-												<Text style={[styles.detail, { color: n.type === "expense_added" ? colors.paused : colors.active }]}>
-													{n.type === "expense_added" ? ` -$${Math.abs(n.amount)}` : ` +$${n.amount}`}
+												<Text
+													style={[
+														styles.detail,
+														{
+															color:
+																n.type === "expense_added"
+																	? colors.paused
+																	: colors.active,
+														},
+													]}
+												>
+													{n.type === "expense_added"
+														? ` -$${Math.abs(n.amount)}`
+														: ` +$${n.amount}`}
 												</Text>
 											)}
 										</View>
-										<Text style={[styles.time, { marginTop: 4 }]}>{timeAgo(n.createdAt)}</Text>
+										<Text style={[styles.time, { marginTop: 4 }]}>
+											{timeAgo(n.createdAt)}
+										</Text>
 									</View>
 									<View style={styles.unreadDot} />
 								</TouchableOpacity>
@@ -148,7 +189,12 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 20,
 		paddingBottom: 16,
 	},
-	clearAll: { fontSize: 13, color: colors.active, fontWeight: "600", letterSpacing: 0.3 },
+	clearAll: {
+		fontSize: 13,
+		color: colors.active,
+		fontWeight: "600",
+		letterSpacing: 0.3,
+	},
 	list: { paddingHorizontal: 18, gap: 8, paddingBottom: 40 },
 	card: {
 		backgroundColor: colors.surface,
@@ -160,11 +206,34 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		gap: 12,
 	},
-	iconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", flexShrink: 0 },
+	iconWrap: {
+		width: 40,
+		height: 40,
+		borderRadius: 12,
+		alignItems: "center",
+		justifyContent: "center",
+		flexShrink: 0,
+	},
 	content: { flex: 1 },
-	message: { fontSize: 13, color: colors.text, letterSpacing: 0.3, lineHeight: 18 },
-	time: { fontSize: 11, color: colors.inactive, marginTop: 4, letterSpacing: 0.3 },
-	unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.active, flexShrink: 0 },
+	message: {
+		fontSize: 13,
+		color: colors.text,
+		letterSpacing: 0.3,
+		lineHeight: 18,
+	},
+	time: {
+		fontSize: 11,
+		color: colors.inactive,
+		marginTop: 4,
+		letterSpacing: 0.3,
+	},
+	unreadDot: {
+		width: 8,
+		height: 8,
+		borderRadius: 4,
+		backgroundColor: colors.active,
+		flexShrink: 0,
+	},
 	swipeDelete: {
 		backgroundColor: colors.paused,
 		borderRadius: 14,
@@ -185,7 +254,17 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		marginBottom: 8,
 	},
-	emptyText: { fontSize: 16, fontWeight: "700", color: colors.text, letterSpacing: 0.3 },
+	emptyText: {
+		fontSize: 16,
+		fontWeight: "700",
+		color: colors.text,
+		letterSpacing: 0.3,
+	},
 	emptySub: { fontSize: 13, color: colors.inactive, letterSpacing: 0.3 },
-	detail: { fontSize: 12, color: colors.inactive, marginTop: 2, letterSpacing: 0.3 },
+	detail: {
+		fontSize: 12,
+		color: colors.inactive,
+		marginTop: 2,
+		letterSpacing: 0.3,
+	},
 });

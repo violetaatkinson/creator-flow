@@ -1,14 +1,8 @@
-import {
-	View,
-	Text,
-	ScrollView,
-	StyleSheet,
-	TouchableOpacity,
-} from "react-native";
+import { View, Text, ScrollView, StyleSheet,TouchableOpacity } from "react-native";
 import { useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { getDB } from "../database/db";
-import { getCurrentUserId } from "../database/authService";
+import { auth } from "../firebase/firebaseConfig";
 import { colors } from "../constants/colors";
 import CampaignCard from "../components/CampaignCard";
 import CampaignCalendar from "../components/CampaignCalendar";
@@ -20,10 +14,10 @@ export default function CampaignsScreen({ navigation }) {
 	const loadCampaigns = useCallback(async () => {
 		try {
 			const db = await getDB();
-			const userId = await getCurrentUserId();
+			const uid = auth.currentUser.uid;
 			const data = await db.getAllAsync(
 				"SELECT * FROM campaigns WHERE userId = ? ORDER BY createdAt DESC",
-				[userId],
+				[uid],
 			);
 			setCampaigns(data);
 		} catch (e) {
@@ -103,10 +97,7 @@ export default function CampaignsScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: colors.backgroundScreen,
-	},
+	container: { flex: 1, backgroundColor: colors.backgroundScreen },
 	header: {
 		flexDirection: "row",
 		justifyContent: "space-between",
@@ -115,11 +106,7 @@ const styles = StyleSheet.create({
 		paddingTop: 50,
 		paddingBottom: 12,
 	},
-	subtitle: {
-		fontSize: 16,
-		color: colors.inactive,
-		letterSpacing: 0.3,
-	},
+	subtitle: { fontSize: 16, color: colors.inactive, letterSpacing: 0.3 },
 	addBtn: {
 		backgroundColor: colors.backgroundBtn,
 		borderRadius: 20,
@@ -134,14 +121,8 @@ const styles = StyleSheet.create({
 		fontSize: 14,
 		letterSpacing: 0.3,
 	},
-	scrollContent: {
-		paddingHorizontal: 18,
-		paddingTop: 14,
-		paddingBottom: 40,
-	},
-	section: {
-		marginBottom: 12,
-	},
+	scrollContent: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 40 },
+	section: { marginBottom: 12 },
 	sectionTitle: {
 		fontSize: 11,
 		fontWeight: "600",
@@ -150,9 +131,7 @@ const styles = StyleSheet.create({
 		letterSpacing: 0.8,
 		marginBottom: 10,
 	},
-	cardWrap: {
-		marginBottom: 8,
-	},
+	cardWrap: { marginBottom: 8 },
 	empty: {
 		textAlign: "center",
 		color: colors.inactive,

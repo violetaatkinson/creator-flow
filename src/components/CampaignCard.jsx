@@ -2,9 +2,9 @@ import { memo, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import Swipeable from "react-native-gesture-handler/Swipeable";
 import { getDB } from "../database/db";
-import { getCurrentUserId } from "../database/authService";
+import { auth } from "../firebase/firebaseConfig";
 import { Ionicons } from "@expo/vector-icons";
-import { colorALight, colors, colorEdit, colorDelete } from "../constants/colors";
+import { colorALight, colors, colorEdit,colorDelete } from "../constants/colors";
 import PlatformIcon from "./PlatformIcon";
 import ConfirmModal from "./ConfirmModal";
 import { createNotification } from "../services/notificationService";
@@ -81,7 +81,7 @@ const CampaignCard = memo(({ item, index, onEdit, onUpdate }) => {
 	const handleStatusChange = async (newStatus) => {
 		try {
 			const db = await getDB();
-			const userId = await getCurrentUserId();
+			const uid = auth.currentUser.uid;
 
 			await db.runAsync("UPDATE campaigns SET status=? WHERE id=?", [
 				newStatus,
@@ -96,7 +96,7 @@ const CampaignCard = memo(({ item, index, onEdit, onUpdate }) => {
 			};
 
 			await createNotification({
-				userId,
+				userId: uid,
 				type: `status_${newStatus.toLowerCase()}`,
 				message: messages[newStatus],
 				campaignId: item.id,

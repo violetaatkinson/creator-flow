@@ -1,18 +1,9 @@
-import {
-	View,
-	Text,
-	ScrollView,
-	StyleSheet,
-	TouchableOpacity,
-	Image,
-	TextInput,
-	Linking,
-} from "react-native";
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image, TextInput, Linking } from "react-native";
 import { useState, useEffect } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
+import { auth } from "../firebase/firebaseConfig";
 import { getDB } from "../database/db";
-import { getCurrentUser, logout } from "../database/authService";
 import { colors, plataforms, btnLogout } from "../constants/colors";
 import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import NotificationBell from "../components/NotificationBell";
@@ -20,7 +11,7 @@ import SuccessModal from "../components/SuccessModal";
 import ErrorModal from "../components/ErrorModal";
 import { generateReport } from "../services/reportService";
 
-export default function ProfileScreen({ onLogout }) {
+export default function ProfileScreen() {
 	const insets = useSafeAreaInsets();
 	const [name, setName] = useState("");
 	const [handle, setHandle] = useState("");
@@ -31,7 +22,6 @@ export default function ProfileScreen({ onLogout }) {
 	const [photoUri, setPhotoUri] = useState(null);
 	const [editing, setEditing] = useState(false);
 	const [loading, setLoading] = useState(true);
-	const [currentUser, setCurrentUser] = useState(null);
 	const [successVisible, setSuccessVisible] = useState(false);
 	const [errorVisible, setErrorVisible] = useState(false);
 	const [errorMessage, setErrorMessage] = useState("");
@@ -44,16 +34,22 @@ export default function ProfileScreen({ onLogout }) {
 	useEffect(() => {
 		const loadProfile = async () => {
 			try {
-				const user = await getCurrentUser();
-				setCurrentUser(user);
-				if (user) {
-					setName(user.name || "");
-					setHandle(user.handle || "");
-					setBio(user.bio || "");
-					setInstagram(user.instagram || "");
-					setTiktok(user.tiktok || "");
-					setYoutube(user.youtube || "");
-					setPhotoUri(user.photoUri || null);
+				const uid = auth.currentUser.uid;
+				const db = await getDB();
+
+				const profile = await db.getFirstAsync(
+					"SELECT * FROM users WHERE uid = ?",
+					[uid],
+				);
+
+				if (profile) {
+					setName(profile.name || "");
+					setHandle(profile.handle || "");
+					setBio(profile.bio || "");
+					setInstagram(profile.instagram || "");
+					setTiktok(profile.tiktok || "");
+					setYoutube(profile.youtube || "");
+					setPhotoUri(profile.photoUri || null);
 				}
 			} catch (e) {
 				console.log(e);
@@ -81,11 +77,18 @@ export default function ProfileScreen({ onLogout }) {
 
 	const handleSave = async () => {
 		try {
+			const uid = auth.currentUser.uid;
 			const db = await getDB();
+
 			await db.runAsync(
-				`UPDATE users SET name=?, handle=?, bio=?, instagram=?, tiktok=?, youtube=?, photoUri=?, updatedAt=?
-				 WHERE id=?`,
+				`INSERT INTO users (uid, name, handle, bio, instagram, tiktok, youtube, photoUri, updatedAt)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+				 ON CONFLICT(uid) DO UPDATE SET
+				 name=excluded.name, handle=excluded.handle, bio=excluded.bio,
+				 instagram=excluded.instagram, tiktok=excluded.tiktok,
+				 youtube=excluded.youtube, photoUri=excluded.photoUri, updatedAt=excluded.updatedAt`,
 				[
+					uid,
 					name,
 					handle,
 					bio,
@@ -94,7 +97,6 @@ export default function ProfileScreen({ onLogout }) {
 					youtube,
 					photoUri || "",
 					new Date().toISOString(),
-					currentUser.id,
 				],
 			);
 			setEditing(false);
@@ -105,8 +107,7 @@ export default function ProfileScreen({ onLogout }) {
 	};
 
 	const handleLogout = async () => {
-		await logout();
-		onLogout();
+		await auth.signOut();
 	};
 
 	const openPlatform = (platform, username) => {
@@ -165,7 +166,7 @@ export default function ProfileScreen({ onLogout }) {
 						{bio ? <Text style={styles.profileBio}>{bio}</Text> : null}
 					</View>
 				) : (
-					<Text style={styles.email}>{currentUser?.email}</Text>
+					<Text style={styles.email}>{auth.currentUser?.email}</Text>
 				)}
 			</View>
 
