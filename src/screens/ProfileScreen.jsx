@@ -1,5 +1,6 @@
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image, TextInput, Linking } from "react-native";
 import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import { auth } from "../firebase/firebaseConfig";
@@ -10,9 +11,25 @@ import NotificationBell from "../components/NotificationBell";
 import SuccessModal from "../components/SuccessModal";
 import ErrorModal from "../components/ErrorModal";
 import { generateReport } from "../services/reportService";
+import { loadMetrics, saveMetrics } from "../store/metricsSlice";
 
-export default function ProfileScreen() {
+const PLATFORMS = [
+	{ key: "Instagram", icon: "instagram", color: plataforms.instagram },
+	{ key: "TikTok", icon: "tiktok", color: colors.text },
+	{ key: "YouTube", icon: "youtube", color: plataforms.youtube },
+];
+
+const METRIC_FIELDS = [
+	{ key: "followers", label: "Followers" },
+	{ key: "likes", label: "Likes" },
+	{ key: "views", label: "Views" },
+];
+
+export default function ProfileScreen({ navigation }) {
 	const insets = useSafeAreaInsets();
+	const dispatch = useDispatch();
+	const metricsData = useSelector((state) => state.metrics.data);
+
 	const [name, setName] = useState("");
 	const [handle, setHandle] = useState("");
 	const [bio, setBio] = useState("");
@@ -26,6 +43,12 @@ export default function ProfileScreen() {
 	const [errorVisible, setErrorVisible] = useState(false);
 	const [errorMessage, setErrorMessage] = useState("");
 
+	const [metricsEdit, setMetricsEdit] = useState({
+		Instagram: { followers: "", likes: "", views: "" },
+		TikTok: { followers: "", likes: "", views: "" },
+		YouTube: { followers: "", likes: "", views: "" },
+	});
+
 	const showError = (msg) => {
 		setErrorMessage(msg);
 		setErrorVisible(true);
@@ -36,12 +59,10 @@ export default function ProfileScreen() {
 			try {
 				const uid = auth.currentUser.uid;
 				const db = await getDB();
-
 				const profile = await db.getFirstAsync(
 					"SELECT * FROM users WHERE uid = ?",
 					[uid],
 				);
-
 				if (profile) {
 					setName(profile.name || "");
 					setHandle(profile.handle || "");
@@ -58,7 +79,30 @@ export default function ProfileScreen() {
 			}
 		};
 		loadProfile();
+		dispatch(loadMetrics());
 	}, []);
+
+	useEffect(() => {
+		if (metricsData) {
+			setMetricsEdit({
+				Instagram: {
+					followers: String(metricsData.Instagram?.followers || ""),
+					likes: String(metricsData.Instagram?.likes || ""),
+					views: String(metricsData.Instagram?.views || ""),
+				},
+				TikTok: {
+					followers: String(metricsData.TikTok?.followers || ""),
+					likes: String(metricsData.TikTok?.likes || ""),
+					views: String(metricsData.TikTok?.views || ""),
+				},
+				YouTube: {
+					followers: String(metricsData.YouTube?.followers || ""),
+					likes: String(metricsData.YouTube?.likes || ""),
+					views: String(metricsData.YouTube?.views || ""),
+				},
+			});
+		}
+	}, [metricsData]);
 
 	const pickImage = async () => {
 		const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -79,7 +123,6 @@ export default function ProfileScreen() {
 		try {
 			const uid = auth.currentUser.uid;
 			const db = await getDB();
-
 			await db.runAsync(
 				`INSERT INTO users (uid, name, handle, bio, instagram, tiktok, youtube, photoUri, updatedAt)
 				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -99,6 +142,24 @@ export default function ProfileScreen() {
 					new Date().toISOString(),
 				],
 			);
+
+			const platformMap = {
+				Instagram: instagram,
+				TikTok: tiktok,
+				YouTube: youtube,
+			};
+			for (const [plat, handle_] of Object.entries(platformMap)) {
+				if (handle_) {
+					await dispatch(
+						saveMetrics({
+							platform: plat,
+							followers: Number(metricsEdit[plat].followers) || 0,
+							likes: Number(metricsEdit[plat].likes) || 0,
+							views: Number(metricsEdit[plat].views) || 0,
+						}),
+					);
+				}
+			}
 			setEditing(false);
 			setSuccessVisible(true);
 		} catch (e) {
@@ -130,6 +191,13 @@ export default function ProfileScreen() {
 				.slice(0, 2)
 		: "?";
 
+	const activePlatforms = PLATFORMS.filter((p) => {
+		if (p.key === "Instagram") return !!instagram;
+		if (p.key === "TikTok") return !!tiktok;
+		if (p.key === "YouTube") return !!youtube;
+		return false;
+	});
+
 	if (loading) return <View style={styles.container} />;
 
 	return (
@@ -158,7 +226,6 @@ export default function ProfileScreen() {
 						</View>
 					)}
 				</TouchableOpacity>
-
 				{name && !editing ? (
 					<View style={styles.profileInfo}>
 						<Text style={styles.profileName}>{name}</Text>
@@ -284,6 +351,74 @@ export default function ProfileScreen() {
 							/>
 						</View>
 					</View>
+				</View>
+			)}
+
+			{activePlatforms.length > 0 && (
+				<View style={styles.section}>
+					<Text style={styles.sectionTitle}>My metrics</Text>
+					{activePlatforms.map((plat, pi) => (
+						<View
+							key={plat.key}
+							style={[styles.metricCard, pi > 0 && { marginTop: 10 }]}
+						>
+							<View style={styles.metricHeader}>
+								<FontAwesome5 name={plat.icon} size={14} color={plat.color} />
+								<Text
+									style={[styles.metricPlatformName, { color: plat.color }]}
+								>
+									{plat.key}
+								</Text>
+							</View>
+							<View style={styles.metricGrid}>
+								{METRIC_FIELDS.map((field) => (
+									<View key={field.key} style={styles.metricItem}>
+										<Text style={styles.metricLabel}>{field.label}</Text>
+										{editing ? (
+											<TextInput
+												style={styles.metricInput}
+												value={metricsEdit[plat.key][field.key]}
+												onChangeText={(val) =>
+													setMetricsEdit((prev) => ({
+														...prev,
+														[plat.key]: { ...prev[plat.key], [field.key]: val },
+													}))
+												}
+												keyboardType="numeric"
+												placeholder="0"
+												placeholderTextColor={colors.inactive}
+											/>
+										) : (
+											<Text style={styles.metricValue}>
+												{metricsData[plat.key]?.[field.key]
+													? Number(
+															metricsData[plat.key][field.key],
+														).toLocaleString()
+													: "—"}
+											</Text>
+										)}
+									</View>
+								))}
+							</View>
+						</View>
+					))}
+				</View>
+			)}
+
+			{/* botón para ir a MetricsScreen con gráficos */}
+			{!editing && activePlatforms.length > 0 && (
+				<View style={styles.section}>
+					<TouchableOpacity
+						style={styles.metricsBtn}
+						onPress={() => navigation.navigate("Metrics")}
+					>
+						<Ionicons
+							name="stats-chart-outline"
+							size={16}
+							color={colors.primary}
+						/>
+						<Text style={styles.metricsBtnText}>View charts & analytics</Text>
+					</TouchableOpacity>
 				</View>
 			)}
 
@@ -577,6 +712,68 @@ const styles = StyleSheet.create({
 		fontSize: 14,
 		fontWeight: "700",
 		color: colors.paused,
+		letterSpacing: 0.3,
+	},
+	metricCard: {
+		backgroundColor: colors.surface,
+		borderRadius: 14,
+		borderWidth: 1,
+		borderColor: colors.border,
+		paddingHorizontal: 14,
+		paddingBottom: 14,
+	},
+	metricHeader: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 8,
+		paddingVertical: 12,
+		borderBottomWidth: 1,
+		borderBottomColor: colors.border,
+	},
+	metricPlatformName: { fontSize: 13, fontWeight: "700", letterSpacing: 0.3 },
+	metricGrid: {
+		flexDirection: "row",
+		flexWrap: "wrap",
+		gap: 10,
+		paddingTop: 12,
+	},
+	metricItem: { width: "46%", gap: 4 },
+	metricLabel: {
+		fontSize: 10,
+		color: colors.inactive,
+		textTransform: "uppercase",
+		letterSpacing: 0.6,
+	},
+	metricValue: {
+		fontSize: 18,
+		fontWeight: "800",
+		color: colors.text,
+		letterSpacing: 0.3,
+	},
+	metricInput: {
+		fontSize: 16,
+		fontWeight: "700",
+		color: colors.text,
+		letterSpacing: 0.3,
+		borderBottomWidth: 1,
+		borderBottomColor: colors.border,
+		paddingVertical: 4,
+	},
+	metricsBtn: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: 8,
+		height: 46,
+		backgroundColor: colors.backgroundBtn,
+		borderRadius: 14,
+		borderWidth: 1,
+		borderColor: colors.btnBorder,
+	},
+	metricsBtnText: {
+		fontSize: 13,
+		fontWeight: "600",
+		color: colors.primary,
 		letterSpacing: 0.3,
 	},
 });

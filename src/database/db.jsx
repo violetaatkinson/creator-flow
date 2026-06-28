@@ -56,5 +56,15 @@ export const initDB = async () => {
       read INTEGER DEFAULT 0,
       createdAt TEXT DEFAULT ''
     );
+    CREATE TABLE IF NOT EXISTS metrics (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId TEXT NOT NULL,
+      platform TEXT NOT NULL,
+      followers INTEGER DEFAULT 0,
+      likes INTEGER DEFAULT 0,
+      views INTEGER DEFAULT 0,
+      updatedAt TEXT DEFAULT '',
+      UNIQUE(userId, platform)
+    );
   `);
 };

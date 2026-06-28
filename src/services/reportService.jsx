@@ -1,7 +1,6 @@
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { getDB } from "../database/db";
-import { getCurrentUserId } from "../database/authService";
 
 const MONTHS = [
 	"Jan",

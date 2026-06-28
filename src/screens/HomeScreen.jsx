@@ -1,14 +1,16 @@
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
 import { useState, useCallback } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { getDB } from "../database/db";
 import { auth } from "../firebase/firebaseConfig";
-import { colors } from "../constants/colors";
-import { Ionicons } from "@expo/vector-icons";
+import { colors, plataforms } from "../constants/colors";
+import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import NotificationBell from "../components/NotificationBell";
 import CampaignChart from "../components/CampaignChart";
 import DeadlineCard from "../components/DeadlineCard";
+import { loadMetrics } from "../store/metricsSlice";
 
 const MONTHS = [
 	"Jan",
@@ -33,11 +35,17 @@ const DAYS = [
 	"Friday",
 	"Saturday",
 ];
+const PLATFORMS = [
+	{ key: "Instagram", icon: "instagram", color: plataforms.instagram },
+	{ key: "TikTok", icon: "tiktok", color: colors.text },
+	{ key: "YouTube", icon: "youtube", color: plataforms.youtube },
+];
 
 const getMonthFromDate = (dateStr) => {
 	if (!dateStr) return -1;
-	const lower = dateStr.toLowerCase();
-	return MONTHS.findIndex((m) => lower.includes(m.toLowerCase()));
+	return MONTHS.findIndex((m) =>
+		dateStr.toLowerCase().includes(m.toLowerCase()),
+	);
 };
 
 const parseDateToTimestamp = (dateStr) => {
@@ -90,8 +98,18 @@ const getNotifIcon = (type) => {
 	return { name: "notifications-outline", color: colors.inactive };
 };
 
+const formatNumber = (n) => {
+	if (!n) return "—";
+	if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
+	if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
+	return String(n);
+};
+
 export default function HomeScreen({ navigation }) {
 	const insets = useSafeAreaInsets();
+	const dispatch = useDispatch();
+	const metricsData = useSelector((state) => state.metrics.data);
+
 	const [userName, setUserName] = useState("");
 	const [campaigns, setCampaigns] = useState([]);
 	const [expenses, setExpenses] = useState([]);
@@ -127,8 +145,7 @@ export default function HomeScreen({ navigation }) {
 					setExpenses(exps);
 
 					const notifs = await db.getAllAsync(
-						`SELECT * FROM notifications WHERE userId=? AND read=0
-						 ORDER BY createdAt DESC LIMIT 3`,
+						`SELECT * FROM notifications WHERE userId=? AND read=0 ORDER BY createdAt DESC LIMIT 3`,
 						[uid],
 					);
 					setNotifications(notifs);
@@ -137,6 +154,7 @@ export default function HomeScreen({ navigation }) {
 				}
 			};
 			loadAll();
+			dispatch(loadMetrics());
 		}, []),
 	);
 
@@ -155,7 +173,6 @@ export default function HomeScreen({ navigation }) {
 			(c.status === "Active" || c.status === "Completed") &&
 			getMonthFromDate(c.date) === currentMonth,
 	);
-
 	const monthIncome = monthCampaigns.reduce((sum, c) => sum + c.payment, 0);
 	const yearIncome = campaigns
 		.filter((c) => c.status === "Active" || c.status === "Completed")
@@ -186,6 +203,7 @@ export default function HomeScreen({ navigation }) {
 	});
 	const maxCount = Math.max(...chartData.map((d) => d.count), 1);
 	const firstName = userName.split(" ")[0];
+	const activePlatformMetrics = PLATFORMS.filter((p) => metricsData[p.key]);
 
 	return (
 		<ScrollView style={styles.container}>
@@ -224,6 +242,57 @@ export default function HomeScreen({ navigation }) {
 					</View>
 				</View>
 			</View>
+
+			{activePlatformMetrics.length > 0 && (
+				<View style={styles.section}>
+					<Text style={styles.sectionTitle}>Social metrics</Text>
+					<View style={styles.metricsRow}>
+						{activePlatformMetrics.map((plat) => {
+							const m = metricsData[plat.key];
+							return (
+								<View
+									key={plat.key}
+									style={[styles.metricCard, { borderTopColor: plat.color }]}
+								>
+									<View style={styles.metricCardHeader}>
+										<FontAwesome5
+											name={plat.icon}
+											size={13}
+											color={plat.color}
+										/>
+										<Text
+											style={[styles.metricCardPlatform, { color: plat.color }]}
+										>
+											{plat.key}
+										</Text>
+									</View>
+									<View style={styles.metricStat}>
+										<Text style={styles.metricStatValue}>
+											{formatNumber(m.followers)}
+										</Text>
+										<Text style={styles.metricStatLabel}>Followers</Text>
+									</View>
+									<View style={styles.metricDivider} />
+									<View style={styles.metricStatRow}>
+										<View style={styles.metricStatSmall}>
+											<Text style={styles.metricStatValueSmall}>
+												{formatNumber(m.likes)}
+											</Text>
+											<Text style={styles.metricStatLabel}>Likes</Text>
+										</View>
+										<View style={styles.metricStatSmall}>
+											<Text style={styles.metricStatValueSmall}>
+												{formatNumber(m.views)}
+											</Text>
+											<Text style={styles.metricStatLabel}>Views</Text>
+										</View>
+									</View>
+								</View>
+							);
+						})}
+					</View>
+				</View>
+			)}
 
 			<CampaignChart
 				chartData={chartData}
@@ -400,6 +469,41 @@ const styles = StyleSheet.create({
 		letterSpacing: 0.8,
 		marginBottom: 12,
 	},
+	metricsRow: { flexDirection: "row", gap: 10 },
+	metricCard: {
+		flex: 1,
+		backgroundColor: colors.surface,
+		borderRadius: 14,
+		borderWidth: 1,
+		borderColor: colors.border,
+		borderTopWidth: 2,
+		padding: 12,
+		gap: 8,
+	},
+	metricCardHeader: { flexDirection: "row", alignItems: "center", gap: 6 },
+	metricCardPlatform: { fontSize: 11, fontWeight: "700", letterSpacing: 0.3 },
+	metricStat: { gap: 2 },
+	metricStatValue: {
+		fontSize: 22,
+		fontWeight: "800",
+		color: colors.text,
+		letterSpacing: 0.3,
+	},
+	metricStatLabel: {
+		fontSize: 9,
+		color: colors.inactive,
+		textTransform: "uppercase",
+		letterSpacing: 0.6,
+	},
+	metricDivider: { height: 1, backgroundColor: colors.border },
+	metricStatRow: { flexDirection: "row", gap: 8 },
+	metricStatSmall: { flex: 1, gap: 2 },
+	metricStatValueSmall: {
+		fontSize: 14,
+		fontWeight: "700",
+		color: colors.text,
+		letterSpacing: 0.3,
+	},
 	notifCard: {
 		backgroundColor: colors.surface,
 		borderRadius: 14,
@@ -435,7 +539,7 @@ const styles = StyleSheet.create({
 	emptyText: { fontSize: 14, color: colors.inactive, letterSpacing: 0.3 },
 	emptyLink: {
 		fontSize: 14,
-		color: colors.active,
+		color: colors.primary,
 		fontWeight: "700",
 		letterSpacing: 0.3,
 	},
