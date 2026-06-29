@@ -44,12 +44,10 @@ export default function CampaignsScreen({ navigation }) {
 		const pendingCount = campaigns.filter((c) => c.status === "Pending").length;
 		const pausedCount = campaigns.filter((c) => c.status === "Paused").length;
 		const completedCount = completed.length;
-
 		if (activeCount) parts.push(`${activeCount} active`);
 		if (pendingCount) parts.push(`${pendingCount} pending`);
 		if (pausedCount) parts.push(`${pausedCount} paused`);
 		if (completedCount) parts.push(`${completedCount} completed`);
-
 		return parts.join(" · ");
 	};
 
