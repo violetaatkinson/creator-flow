@@ -1,10 +1,21 @@
-# 📱 Creator Flow
-### Manage campaigns. Track income. Grow your creator business.
+<p align="center">
+  <img src="./src/assets/logo.png" width="180" alt="Creator Flow Logo"/>
+</p>
+
+<h1 align="center">Creator Flow</h1>
 
 <p align="center">
-  <img src="./src/assets/inicio.png"" width="900" alt="Creator Flow"/>
+  <strong>Manage campaigns. Track income. Grow your creator business.</strong>
 </p>
- 
+
+<p align="center">
+  Mobile app built with <strong>React Native</strong> & <strong>Expo</strong> for influencer campaign management.
+</p>
+
+<p align="center">
+  <img src="./src/assets/inicio.png" width="280" alt="Creator Flow App"/>
+</p>
+
 Creator Flow es una aplicación móvil desarrollada con **React Native y Expo**, diseñada para ayudar a creadores de contenido e influencers a gestionar todas sus colaboraciones con marcas desde un solo lugar. La aplicación permite administrar campañas, controlar ingresos y gastos, visualizar métricas, organizar fechas importantes y acceder rápidamente a las principales plataformas sociales.
 
 ## 📂 Código fuente
