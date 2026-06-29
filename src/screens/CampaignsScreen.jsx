@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, StyleSheet,TouchableOpacity } from "react-native";
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
 import { useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { getDB } from "../database/db";
@@ -25,7 +25,11 @@ export default function CampaignsScreen({ navigation }) {
 		}
 	}, []);
 
-	useFocusEffect(loadCampaigns);
+	useFocusEffect(
+		useCallback(() => {
+			loadCampaigns();
+		}, [loadCampaigns]),
+	);
 
 	const handleEdit = useCallback((item) => {
 		navigation.navigate("EditCampaign", { campaign: item });

@@ -14,57 +14,28 @@ const PLATFORMS = [
 	{ key: "YouTube", icon: "youtube", color: plataforms.youtube },
 ];
 
-const METRIC_FIELDS = [
-	{ key: "followers", label: "Followers" },
-	{ key: "likes", label: "Likes" },
-	{ key: "views", label: "Views" },
-];
-
 export default function MetricsScreen({ navigation }) {
 	const insets = useSafeAreaInsets();
 	const dispatch = useDispatch();
 	const metricsData = useSelector((state) => state.metrics.data);
 	const [selectedPlatform, setSelectedPlatform] = useState("Instagram");
+	const [followers, setFollowers] = useState("");
 	const [successVisible, setSuccessVisible] = useState(false);
-	const [inputs, setInputs] = useState({
-		Instagram: { followers: "", likes: "", views: "" },
-		TikTok: { followers: "", likes: "", views: "" },
-		YouTube: { followers: "", likes: "", views: "" },
-	});
 
 	useEffect(() => {
 		dispatch(loadMetrics());
 	}, []);
 
 	useEffect(() => {
-		if (metricsData) {
-			setInputs({
-				Instagram: {
-					followers: String(metricsData.Instagram?.followers || ""),
-					likes: String(metricsData.Instagram?.likes || ""),
-					views: String(metricsData.Instagram?.views || ""),
-				},
-				TikTok: {
-					followers: String(metricsData.TikTok?.followers || ""),
-					likes: String(metricsData.TikTok?.likes || ""),
-					views: String(metricsData.TikTok?.views || ""),
-				},
-				YouTube: {
-					followers: String(metricsData.YouTube?.followers || ""),
-					likes: String(metricsData.YouTube?.likes || ""),
-					views: String(metricsData.YouTube?.views || ""),
-				},
-			});
-		}
-	}, [metricsData]);
+		const val = metricsData[selectedPlatform]?.followers;
+		setFollowers(val ? String(val) : "");
+	}, [selectedPlatform, metricsData]);
 
 	const handleSave = async () => {
 		await dispatch(
 			saveMetrics({
 				platform: selectedPlatform,
-				followers: Number(inputs[selectedPlatform].followers) || 0,
-				likes: Number(inputs[selectedPlatform].likes) || 0,
-				views: Number(inputs[selectedPlatform].views) || 0,
+				followers: Number(followers) || 0,
 			}),
 		);
 		setSuccessVisible(true);
@@ -78,7 +49,7 @@ export default function MetricsScreen({ navigation }) {
 				<TouchableOpacity onPress={() => navigation.goBack()}>
 					<Ionicons name="chevron-back" size={26} color={colors.text} />
 				</TouchableOpacity>
-				<Text style={styles.title}>My metrics</Text>
+				<Text style={styles.title}>Plataform Metrics</Text>
 				<View style={{ width: 26 }} />
 			</View>
 
@@ -115,34 +86,19 @@ export default function MetricsScreen({ navigation }) {
 				))}
 			</View>
 
+			
 			<View style={styles.card}>
-				{METRIC_FIELDS.map((field, index) => (
-					<View
-						key={field.key}
-						style={[
-							styles.field,
-							index === METRIC_FIELDS.length - 1 && { borderBottomWidth: 0 },
-						]}
-					>
-						<Text style={styles.fieldLabel}>{field.label}</Text>
-						<TextInput
-							style={styles.fieldInput}
-							value={inputs[selectedPlatform][field.key]}
-							onChangeText={(val) =>
-								setInputs((prev) => ({
-									...prev,
-									[selectedPlatform]: {
-										...prev[selectedPlatform],
-										[field.key]: val,
-									},
-								}))
-							}
-							keyboardType="numeric"
-							placeholder="0"
-							placeholderTextColor={colors.inactive}
-						/>
-					</View>
-				))}
+				<View style={styles.field}>
+					<Text style={styles.fieldLabel}>Followers</Text>
+					<TextInput
+						style={styles.fieldInput}
+						value={followers}
+						onChangeText={setFollowers}
+						keyboardType="numeric"
+						placeholder="0"
+						placeholderTextColor={colors.inactive}
+					/>
+				</View>
 			</View>
 
 			<TouchableOpacity
@@ -223,8 +179,6 @@ const styles = StyleSheet.create({
 	},
 	field: {
 		paddingVertical: 14,
-		borderBottomWidth: 1,
-		borderBottomColor: colors.border,
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "space-between",
@@ -236,12 +190,12 @@ const styles = StyleSheet.create({
 		letterSpacing: 0.3,
 	},
 	fieldInput: {
-		fontSize: 16,
-		fontWeight: "700",
+		fontSize: 20,
+		fontWeight: "800",
 		color: colors.text,
 		letterSpacing: 0.3,
 		textAlign: "right",
-		minWidth: 80,
+		minWidth: 100,
 	},
 	saveBtn: {
 		flexDirection: "row",

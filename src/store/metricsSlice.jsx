@@ -16,18 +16,17 @@ export const loadMetrics = createAsyncThunk("metrics/load", async () => {
 
 export const saveMetrics = createAsyncThunk(
 	"metrics/save",
-	async ({ platform, followers, likes, views }) => {
+	async ({ platform, followers }) => {
 		const db = await getDB();
 		const uid = auth.currentUser.uid;
 		await db.runAsync(
-			`INSERT INTO metrics (userId, platform, followers, likes, views, updatedAt)
-		 VALUES (?, ?, ?, ?, ?, ?)
+			`INSERT INTO metrics (userId, platform, followers, updatedAt)
+		 VALUES (?, ?, ?, ?)
 		 ON CONFLICT(userId, platform) DO UPDATE SET
-		 followers=excluded.followers, likes=excluded.likes,
-		 views=excluded.views, updatedAt=excluded.updatedAt`,
-			[uid, platform, followers, likes, views, new Date().toISOString()],
+		 followers=excluded.followers, updatedAt=excluded.updatedAt`,
+			[uid, platform, followers, new Date().toISOString()],
 		);
-		return { platform, followers, likes, views };
+		return { platform, followers };
 	},
 );
 

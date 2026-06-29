@@ -245,7 +245,7 @@ export default function HomeScreen({ navigation }) {
 
 			{activePlatformMetrics.length > 0 && (
 				<View style={styles.section}>
-					<Text style={styles.sectionTitle}>Social metrics</Text>
+					<Text style={styles.sectionTitle}>Plataforms metrics</Text>
 					<View style={styles.metricsRow}>
 						{activePlatformMetrics.map((plat) => {
 							const m = metricsData[plat.key];
@@ -266,27 +266,10 @@ export default function HomeScreen({ navigation }) {
 											{plat.key}
 										</Text>
 									</View>
-									<View style={styles.metricStat}>
-										<Text style={styles.metricStatValue}>
-											{formatNumber(m.followers)}
-										</Text>
-										<Text style={styles.metricStatLabel}>Followers</Text>
-									</View>
-									<View style={styles.metricDivider} />
-									<View style={styles.metricStatRow}>
-										<View style={styles.metricStatSmall}>
-											<Text style={styles.metricStatValueSmall}>
-												{formatNumber(m.likes)}
-											</Text>
-											<Text style={styles.metricStatLabel}>Likes</Text>
-										</View>
-										<View style={styles.metricStatSmall}>
-											<Text style={styles.metricStatValueSmall}>
-												{formatNumber(m.views)}
-											</Text>
-											<Text style={styles.metricStatLabel}>Views</Text>
-										</View>
-									</View>
+									<Text style={styles.metricStatValue}>
+										{formatNumber(m.followers)}
+									</Text>
+									<Text style={styles.metricStatLabel}>Followers</Text>
 								</View>
 							);
 						})}
@@ -469,7 +452,7 @@ const styles = StyleSheet.create({
 		letterSpacing: 0.8,
 		marginBottom: 12,
 	},
-	metricsRow: { flexDirection: "row", gap: 10 },
+	metricsRow: { flexDirection: "row", gap: 10, justifyContent: "center" },
 	metricCard: {
 		flex: 1,
 		backgroundColor: colors.surface,
@@ -478,31 +461,27 @@ const styles = StyleSheet.create({
 		borderColor: colors.border,
 		borderTopWidth: 2,
 		padding: 12,
-		gap: 8,
+		gap: 4,
+		alignItems: "center",
 	},
-	metricCardHeader: { flexDirection: "row", alignItems: "center", gap: 6 },
-	metricCardPlatform: { fontSize: 11, fontWeight: "700", letterSpacing: 0.3 },
-	metricStat: { gap: 2 },
+	metricCardHeader: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 6,
+		marginBottom: 4,
+	},
+	metricCardPlatform: { fontSize: 12, fontWeight: "700", letterSpacing: 0.3 },
 	metricStatValue: {
-		fontSize: 22,
+		fontSize: 20,
 		fontWeight: "800",
 		color: colors.text,
 		letterSpacing: 0.3,
 	},
 	metricStatLabel: {
-		fontSize: 9,
+		fontSize: 10,
 		color: colors.inactive,
 		textTransform: "uppercase",
 		letterSpacing: 0.6,
-	},
-	metricDivider: { height: 1, backgroundColor: colors.border },
-	metricStatRow: { flexDirection: "row", gap: 8 },
-	metricStatSmall: { flex: 1, gap: 2 },
-	metricStatValueSmall: {
-		fontSize: 14,
-		fontWeight: "700",
-		color: colors.text,
-		letterSpacing: 0.3,
 	},
 	notifCard: {
 		backgroundColor: colors.surface,

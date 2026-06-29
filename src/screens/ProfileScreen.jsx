@@ -1,4 +1,13 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image, TextInput, Linking } from "react-native";
+import {
+	View,
+	Text,
+	ScrollView,
+	StyleSheet,
+	TouchableOpacity,
+	Image,
+	TextInput,
+	Linking,
+} from "react-native";
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,18 +20,12 @@ import NotificationBell from "../components/NotificationBell";
 import SuccessModal from "../components/SuccessModal";
 import ErrorModal from "../components/ErrorModal";
 import { generateReport } from "../services/reportService";
-import { loadMetrics, saveMetrics } from "../store/metricsSlice";
+import { loadMetrics } from "../store/metricsSlice";
 
 const PLATFORMS = [
 	{ key: "Instagram", icon: "instagram", color: plataforms.instagram },
 	{ key: "TikTok", icon: "tiktok", color: colors.text },
 	{ key: "YouTube", icon: "youtube", color: plataforms.youtube },
-];
-
-const METRIC_FIELDS = [
-	{ key: "followers", label: "Followers" },
-	{ key: "likes", label: "Likes" },
-	{ key: "views", label: "Views" },
 ];
 
 export default function ProfileScreen({ navigation }) {
@@ -42,12 +45,6 @@ export default function ProfileScreen({ navigation }) {
 	const [successVisible, setSuccessVisible] = useState(false);
 	const [errorVisible, setErrorVisible] = useState(false);
 	const [errorMessage, setErrorMessage] = useState("");
-
-	const [metricsEdit, setMetricsEdit] = useState({
-		Instagram: { followers: "", likes: "", views: "" },
-		TikTok: { followers: "", likes: "", views: "" },
-		YouTube: { followers: "", likes: "", views: "" },
-	});
 
 	const showError = (msg) => {
 		setErrorMessage(msg);
@@ -81,28 +78,6 @@ export default function ProfileScreen({ navigation }) {
 		loadProfile();
 		dispatch(loadMetrics());
 	}, []);
-
-	useEffect(() => {
-		if (metricsData) {
-			setMetricsEdit({
-				Instagram: {
-					followers: String(metricsData.Instagram?.followers || ""),
-					likes: String(metricsData.Instagram?.likes || ""),
-					views: String(metricsData.Instagram?.views || ""),
-				},
-				TikTok: {
-					followers: String(metricsData.TikTok?.followers || ""),
-					likes: String(metricsData.TikTok?.likes || ""),
-					views: String(metricsData.TikTok?.views || ""),
-				},
-				YouTube: {
-					followers: String(metricsData.YouTube?.followers || ""),
-					likes: String(metricsData.YouTube?.likes || ""),
-					views: String(metricsData.YouTube?.views || ""),
-				},
-			});
-		}
-	}, [metricsData]);
 
 	const pickImage = async () => {
 		const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -142,24 +117,6 @@ export default function ProfileScreen({ navigation }) {
 					new Date().toISOString(),
 				],
 			);
-
-			const platformMap = {
-				Instagram: instagram,
-				TikTok: tiktok,
-				YouTube: youtube,
-			};
-			for (const [plat, handle_] of Object.entries(platformMap)) {
-				if (handle_) {
-					await dispatch(
-						saveMetrics({
-							platform: plat,
-							followers: Number(metricsEdit[plat].followers) || 0,
-							likes: Number(metricsEdit[plat].likes) || 0,
-							views: Number(metricsEdit[plat].views) || 0,
-						}),
-					);
-				}
-			}
 			setEditing(false);
 			setSuccessVisible(true);
 		} catch (e) {
@@ -354,60 +311,31 @@ export default function ProfileScreen({ navigation }) {
 				</View>
 			)}
 
-			{activePlatforms.length > 0 && (
-				<View style={styles.section}>
-					<Text style={styles.sectionTitle}>My metrics</Text>
-					{activePlatforms.map((plat, pi) => (
-						<View
-							key={plat.key}
-							style={[styles.metricCard, pi > 0 && { marginTop: 10 }]}
-						>
-							<View style={styles.metricHeader}>
-								<FontAwesome5 name={plat.icon} size={14} color={plat.color} />
-								<Text
-									style={[styles.metricPlatformName, { color: plat.color }]}
-								>
-									{plat.key}
-								</Text>
-							</View>
-							<View style={styles.metricGrid}>
-								{METRIC_FIELDS.map((field) => (
-									<View key={field.key} style={styles.metricItem}>
-										<Text style={styles.metricLabel}>{field.label}</Text>
-										{editing ? (
-											<TextInput
-												style={styles.metricInput}
-												value={metricsEdit[plat.key][field.key]}
-												onChangeText={(val) =>
-													setMetricsEdit((prev) => ({
-														...prev,
-														[plat.key]: { ...prev[plat.key], [field.key]: val },
-													}))
-												}
-												keyboardType="numeric"
-												placeholder="0"
-												placeholderTextColor={colors.inactive}
-											/>
-										) : (
-											<Text style={styles.metricValue}>
-												{metricsData[plat.key]?.[field.key]
-													? Number(
-															metricsData[plat.key][field.key],
-														).toLocaleString()
-													: "—"}
-											</Text>
-										)}
-									</View>
-								))}
-							</View>
-						</View>
-					))}
-				</View>
-			)}
-
-			{/* botón para ir a MetricsScreen con gráficos */}
+			{/* resumen visual de métricas — solo fuera del modo edición */}
 			{!editing && activePlatforms.length > 0 && (
 				<View style={styles.section}>
+					<Text style={styles.sectionTitle}>Plataform metrics</Text>
+					<View style={styles.metricsRow}>
+						{activePlatforms.map((plat) => (
+							<View
+								key={plat.key}
+								style={[styles.metricCard, { borderTopColor: plat.color }]}
+							>
+								<View style={styles.metricCardHeader}>
+									<FontAwesome5 name={plat.icon} size={11} color={plat.color} />
+									<Text style={[styles.metricCardName, { color: plat.color }]}>
+										{plat.key}
+									</Text>
+								</View>
+								<Text style={styles.metricCardValue}>
+									{metricsData[plat.key]?.followers
+										? Number(metricsData[plat.key].followers).toLocaleString()
+										: "—"}
+								</Text>
+								<Text style={styles.metricCardLabel}>Followers</Text>
+							</View>
+						))}
+					</View>
 					<TouchableOpacity
 						style={styles.metricsBtn}
 						onPress={() => navigation.navigate("Metrics")}
@@ -417,7 +345,7 @@ export default function ProfileScreen({ navigation }) {
 							size={16}
 							color={colors.primary}
 						/>
-						<Text style={styles.metricsBtnText}>View charts & analytics</Text>
+						<Text style={styles.metricsBtnText}>Edit Metrics</Text>
 					</TouchableOpacity>
 				</View>
 			)}
@@ -471,11 +399,11 @@ export default function ProfileScreen({ navigation }) {
 						onPress={() => setEditing(true)}
 					>
 						<Ionicons name="pencil-outline" size={16} color={colors.primary} />
-						<Text style={styles.btnEditText}>Edit profile</Text>
+						<Text style={styles.btnEditText}>Edit Profile</Text>
 					</TouchableOpacity>
 					<TouchableOpacity style={styles.btnLogout} onPress={handleLogout}>
 						<Ionicons name="log-out-outline" size={16} color={colors.paused} />
-						<Text style={styles.btnLogoutText}>Sign out</Text>
+						<Text style={styles.btnLogoutText}>Sign Out</Text>
 					</TouchableOpacity>
 				</View>
 			)}
@@ -714,57 +642,50 @@ const styles = StyleSheet.create({
 		color: colors.paused,
 		letterSpacing: 0.3,
 	},
+
+	// métricas
+	metricsRow: {
+		flexDirection: "row",
+		gap: 8,
+		marginBottom: 12,
+		justifyContent: "center",
+	},
 	metricCard: {
+		flex: 1,
 		backgroundColor: colors.surface,
 		borderRadius: 14,
 		borderWidth: 1,
 		borderColor: colors.border,
-		paddingHorizontal: 14,
-		paddingBottom: 14,
+		borderTopWidth: 2,
+		padding: 10,
+		alignItems: "center",
+		gap: 2,
 	},
-	metricHeader: {
+	metricCardHeader: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 8,
-		paddingVertical: 12,
-		borderBottomWidth: 1,
-		borderBottomColor: colors.border,
+		gap: 5,
+		marginBottom: 4,
 	},
-	metricPlatformName: { fontSize: 13, fontWeight: "700", letterSpacing: 0.3 },
-	metricGrid: {
-		flexDirection: "row",
-		flexWrap: "wrap",
-		gap: 10,
-		paddingTop: 12,
-	},
-	metricItem: { width: "46%", gap: 4 },
-	metricLabel: {
-		fontSize: 10,
-		color: colors.inactive,
-		textTransform: "uppercase",
-		letterSpacing: 0.6,
-	},
-	metricValue: {
+	metricCardName: { fontSize: 10, fontWeight: "700", letterSpacing: 0.3 },
+	metricCardValue: {
 		fontSize: 18,
 		fontWeight: "800",
 		color: colors.text,
 		letterSpacing: 0.3,
 	},
-	metricInput: {
-		fontSize: 16,
-		fontWeight: "700",
-		color: colors.text,
-		letterSpacing: 0.3,
-		borderBottomWidth: 1,
-		borderBottomColor: colors.border,
-		paddingVertical: 4,
+	metricCardLabel: {
+		fontSize: 9,
+		color: colors.inactive,
+		textTransform: "uppercase",
+		letterSpacing: 0.6,
 	},
 	metricsBtn: {
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "center",
 		gap: 8,
-		height: 46,
+		height: 42,
 		backgroundColor: colors.backgroundBtn,
 		borderRadius: 14,
 		borderWidth: 1,
