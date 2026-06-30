@@ -45,6 +45,7 @@ export default function ProfileScreen({ navigation }) {
 	const [successVisible, setSuccessVisible] = useState(false);
 	const [errorVisible, setErrorVisible] = useState(false);
 	const [errorMessage, setErrorMessage] = useState("");
+	const [selectedMetricPlatform, setSelectedMetricPlatform] = useState(null);
 
 	const showError = (msg) => {
 		setErrorMessage(msg);
@@ -194,43 +195,6 @@ export default function ProfileScreen({ navigation }) {
 				)}
 			</View>
 
-			{(instagram || tiktok || youtube) && !editing && (
-				<View style={styles.platformRow}>
-					{instagram ? (
-						<TouchableOpacity
-							style={styles.platformBtn}
-							onPress={() => openPlatform("instagram", instagram)}
-						>
-							<FontAwesome5
-								name="instagram"
-								size={18}
-								color={plataforms.instagram}
-							/>
-						</TouchableOpacity>
-					) : null}
-					{tiktok ? (
-						<TouchableOpacity
-							style={styles.platformBtn}
-							onPress={() => openPlatform("tiktok", tiktok)}
-						>
-							<FontAwesome5 name="tiktok" size={18} color={colors.text} />
-						</TouchableOpacity>
-					) : null}
-					{youtube ? (
-						<TouchableOpacity
-							style={styles.platformBtn}
-							onPress={() => openPlatform("youtube", youtube)}
-						>
-							<FontAwesome5
-								name="youtube"
-								size={18}
-								color={plataforms.youtube}
-							/>
-						</TouchableOpacity>
-					) : null}
-				</View>
-			)}
-
 			{editing && (
 				<View style={styles.section}>
 					<Text style={styles.sectionTitle}>Your info</Text>
@@ -311,31 +275,75 @@ export default function ProfileScreen({ navigation }) {
 				</View>
 			)}
 
-			{/* resumen visual de métricas — solo fuera del modo edición */}
 			{!editing && activePlatforms.length > 0 && (
 				<View style={styles.section}>
-					<Text style={styles.sectionTitle}>Plataform metrics</Text>
-					<View style={styles.metricsRow}>
-						{activePlatforms.map((plat) => (
-							<View
-								key={plat.key}
-								style={[styles.metricCard, { borderTopColor: plat.color }]}
+					<Text style={styles.sectionTitle}>Platform metrics</Text>
+					<View style={styles.metricToggle}>
+						{activePlatforms.map((plat) => {
+							const isSelected =
+								(selectedMetricPlatform || activePlatforms[0].key) === plat.key;
+							return (
+								<TouchableOpacity
+									key={plat.key}
+									style={[
+										styles.metricToggleBtn,
+										isSelected && {
+											backgroundColor: `${plat.color}15`,
+											borderColor: plat.color,
+										},
+									]}
+									onPress={() => setSelectedMetricPlatform(plat.key)}
+								>
+									<FontAwesome5
+										name={plat.icon}
+										size={13}
+										color={isSelected ? plat.color : colors.inactive}
+									/>
+								</TouchableOpacity>
+							);
+						})}
+					</View>
+
+					{(() => {
+						const activeKey = selectedMetricPlatform || activePlatforms[0].key;
+						const plat = activePlatforms.find((p) => p.key === activeKey);
+						const handleMap = {
+							Instagram: instagram,
+							TikTok: tiktok,
+							YouTube: youtube,
+						};
+						return (
+							<TouchableOpacity
+								style={[
+									styles.metricDetailCard,
+									{ borderTopColor: plat.color },
+								]}
+								onPress={() =>
+									openPlatform(plat.key.toLowerCase(), handleMap[plat.key])
+								}
+								activeOpacity={0.8}
 							>
 								<View style={styles.metricCardHeader}>
-									<FontAwesome5 name={plat.icon} size={11} color={plat.color} />
+									<FontAwesome5 name={plat.icon} size={14} color={plat.color} />
 									<Text style={[styles.metricCardName, { color: plat.color }]}>
 										{plat.key}
 									</Text>
+									<Ionicons
+										name="open-outline"
+										size={14}
+										color={colors.inactive}
+									/>
 								</View>
-								<Text style={styles.metricCardValue}>
+								<Text style={styles.metricDetailValue}>
 									{metricsData[plat.key]?.followers
 										? Number(metricsData[plat.key].followers).toLocaleString()
 										: "—"}
 								</Text>
 								<Text style={styles.metricCardLabel}>Followers</Text>
-							</View>
-						))}
-					</View>
+							</TouchableOpacity>
+						);
+					})()}
+
 					<TouchableOpacity
 						style={styles.metricsBtn}
 						onPress={() => navigation.navigate("Metrics")}
@@ -431,7 +439,7 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 20,
 		paddingBottom: 12,
 	},
-	avatarSection: { alignItems: "center", paddingVertical: 24, gap: 10 },
+	avatarSection: { alignItems: "center", paddingVertical: 16, gap: 10 },
 	avatarWrap: { position: "relative" },
 	avatar: {
 		width: 90,
@@ -487,27 +495,12 @@ const styles = StyleSheet.create({
 		letterSpacing: 0.3,
 		textAlign: "center",
 		marginTop: 2,
+		marginBottom: 4,
 		paddingHorizontal: 20,
 		fontStyle: "italic",
 		textTransform: "capitalize",
 	},
 	email: { fontSize: 13, color: colors.inactive, letterSpacing: 0.3 },
-	platformRow: {
-		flexDirection: "row",
-		justifyContent: "center",
-		gap: 12,
-		marginBottom: 20,
-	},
-	platformBtn: {
-		width: 44,
-		height: 44,
-		borderRadius: 12,
-		backgroundColor: colors.surface,
-		borderWidth: 1,
-		borderColor: colors.border,
-		alignItems: "center",
-		justifyContent: "center",
-	},
 	section: { paddingHorizontal: 18, marginBottom: 16 },
 	sectionTitle: {
 		fontSize: 11,
@@ -642,40 +635,43 @@ const styles = StyleSheet.create({
 		color: colors.paused,
 		letterSpacing: 0.3,
 	},
-
-	// métricas
-	metricsRow: {
+	metricToggle: {
 		flexDirection: "row",
 		gap: 8,
 		marginBottom: 12,
+	},
+	metricToggleBtn: {
+		width: 44,
+		height: 44,
+		borderRadius: 12,
+		backgroundColor: colors.surface,
+		borderWidth: 1,
+		borderColor: colors.border,
+		alignItems: "center",
 		justifyContent: "center",
 	},
-	metricCard: {
-		flex: 1,
+	metricDetailCard: {
 		backgroundColor: colors.surface,
 		borderRadius: 14,
 		borderWidth: 1,
 		borderColor: colors.border,
 		borderTopWidth: 2,
-		padding: 10,
+		padding: 16,
 		alignItems: "center",
-		gap: 2,
+		gap: 4,
+		marginBottom: 8,
 	},
-	metricCardHeader: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 5,
-		marginBottom: 4,
-	},
-	metricCardName: { fontSize: 10, fontWeight: "700", letterSpacing: 0.3 },
-	metricCardValue: {
-		fontSize: 18,
+	metricCardHeader: { flexDirection: "row", alignItems: "center", gap: 6 },
+	metricCardName: { fontSize: 12, fontWeight: "700", letterSpacing: 0.3 },
+	metricDetailValue: {
+		fontSize: 28,
 		fontWeight: "800",
 		color: colors.text,
 		letterSpacing: 0.3,
+		marginTop: 4,
 	},
 	metricCardLabel: {
-		fontSize: 9,
+		fontSize: 10,
 		color: colors.inactive,
 		textTransform: "uppercase",
 		letterSpacing: 0.6,
@@ -690,7 +686,7 @@ const styles = StyleSheet.create({
 		borderRadius: 14,
 		borderWidth: 1,
 		borderColor: colors.btnBorder,
-		marginTop:6
+		marginTop: 6,
 	},
 	metricsBtnText: {
 		fontSize: 13,
