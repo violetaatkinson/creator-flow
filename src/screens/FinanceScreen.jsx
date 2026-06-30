@@ -1,4 +1,11 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Modal } from "react-native";
+import {
+	View,
+	Text,
+	ScrollView,
+	StyleSheet,
+	TouchableOpacity,
+	Modal,
+} from "react-native";
 import { useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { getDB } from "../database/db";
@@ -113,36 +120,28 @@ export default function FinanceScreen({ navigation }) {
 			contentContainerStyle={styles.scrollContent}
 		>
 			<View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-				<View style={styles.headerTop}>
-					<View style={styles.periodLine}>
-						{["Month", "Semester", "Year"].map((p, i) => (
-							<View
-								key={p}
-								style={{ flexDirection: "row", alignItems: "center" }}
+				<View style={styles.periodSelector}>
+					{["Month", "Semester", "Year"].map((p) => (
+						<TouchableOpacity
+							key={p}
+							style={[styles.periodTab, period === p && styles.periodTabActive]}
+							onPress={() => {
+								setPeriod(p);
+								if (p === "Month") setShowMonthModal(true);
+							}}
+						>
+							<Text
+								style={[
+									styles.periodTabText,
+									period === p && styles.periodTabTextActive,
+								]}
 							>
-								{i > 0 && <Text style={styles.dot}> · </Text>}
-								<TouchableOpacity
-									onPress={() => {
-										setPeriod(p);
-										if (p === "Month") setShowMonthModal(true);
-									}}
-								>
-									<Text
-										style={[
-											styles.periodItem,
-											period === p && styles.periodItemActive,
-										]}
-									>
-										{p === "Month"
-											? `${MONTHS[selectedMonth]} ${currentYear}`
-											: p}
-									</Text>
-								</TouchableOpacity>
-							</View>
-						))}
-					</View>
-					<NotificationBell />
+								{p === "Month" ? `${MONTHS[selectedMonth]}` : p}
+							</Text>
+						</TouchableOpacity>
+					))}
 				</View>
+				<NotificationBell />
 			</View>
 
 			<Modal
@@ -153,7 +152,7 @@ export default function FinanceScreen({ navigation }) {
 			>
 				<View style={styles.modalOverlay}>
 					<View style={styles.modalCard}>
-						<Text style={styles.modalTitle}>Select month</Text>
+						<Text style={styles.modalTitle}>Select Month</Text>
 						<View style={styles.monthGrid}>
 							{MONTHS.map((m, i) => (
 								<TouchableOpacity
@@ -307,27 +306,37 @@ export default function FinanceScreen({ navigation }) {
 const styles = StyleSheet.create({
 	container: { flex: 1, backgroundColor: colors.backgroundScreen },
 	scrollContent: { paddingBottom: 40 },
-	header: { paddingHorizontal: 20, paddingBottom: 12 },
-	headerTop: {
+	header: {
 		flexDirection: "row",
 		justifyContent: "space-between",
 		alignItems: "center",
-		marginBottom: 8,
+		paddingHorizontal: 20,
+		paddingBottom: 16,
 	},
-	periodLine: {
+	periodSelector: {
 		flexDirection: "row",
-		alignItems: "center",
-		flexWrap: "wrap",
-		justifyContent: "flex-start",
+		
 	},
-	periodItem: {
-		fontSize: 18,
+	periodTab: {
+		paddingHorizontal: 12,
+		paddingVertical: 3,
+		borderRadius: 10,
+	},
+	periodTabActive: {
+		backgroundColor: colors.backgroundBtn,
+		borderWidth: 1,
+		borderColor: colors.btnBorder,
+	},
+	periodTabText: {
+		fontSize: 13,
 		color: colors.inactive,
 		fontWeight: "600",
 		letterSpacing: 0.3,
 	},
-	periodItemActive: { color: colors.primary, fontWeight: "700" },
-	dot: { fontSize: 18, color: colors.inactive },
+	periodTabTextActive: {
+		color: colors.primary,
+		fontWeight: "700",
+	},
 	modalOverlay: {
 		flex: 1,
 		backgroundColor: errorModal.bg,
@@ -368,7 +377,7 @@ const styles = StyleSheet.create({
 		fontWeight: "600",
 		letterSpacing: 0.3,
 	},
-	monthOptionTextActive: { color: colors.active },
+	monthOptionTextActive: { color: colors.primary },
 	modalClose: {
 		marginTop: 16,
 		alignItems: "center",
@@ -395,7 +404,7 @@ const styles = StyleSheet.create({
 	kpi: { flex: 1, padding: 14, alignItems: "center" },
 	kpiBorder: { borderRightWidth: 1, borderRightColor: colors.border },
 	kpiLabel: {
-		fontSize: 10,
+		fontSize: 12,
 		color: colors.inactive,
 		letterSpacing: 0.7,
 		textTransform: "uppercase",
@@ -403,7 +412,7 @@ const styles = StyleSheet.create({
 	kpiValue: {
 		fontSize: 20,
 		fontWeight: "800",
-		marginTop: 4,
+		marginTop: 6,
 		letterSpacing: 0.3,
 	},
 	sectionTitle: {

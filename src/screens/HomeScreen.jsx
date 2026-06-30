@@ -425,12 +425,12 @@ const styles = StyleSheet.create({
 	},
 	kpiBorderT: { borderTopWidth: 2, borderTopColor: colors.pending },
 	kpiLabel: {
-		fontSize: 10,
+		fontSize: 12,
 		color: colors.inactive,
 		textTransform: "uppercase",
 		letterSpacing: 0.7,
 	},
-	kpiValue: { fontSize: 22, fontWeight: "800", letterSpacing: 0.3 },
+	kpiValue: { fontSize: 22, fontWeight: "800", letterSpacing: 0.3},
 	kpiSubRow: {
 		flexDirection: "row",
 		alignItems: "center",

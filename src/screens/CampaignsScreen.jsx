@@ -1,14 +1,24 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
+import {
+	View,
+	Text,
+	ScrollView,
+	StyleSheet,
+	TouchableOpacity,
+} from "react-native";
 import { useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getDB } from "../database/db";
 import { auth } from "../firebase/firebaseConfig";
 import { colors } from "../constants/colors";
+import { Ionicons } from "@expo/vector-icons";
+import NotificationBell from "../components/NotificationBell";
 import CampaignCard from "../components/CampaignCard";
 import CampaignCalendar from "../components/CampaignCalendar";
 import CampaignHistory from "../components/CampaignHistory";
 
 export default function CampaignsScreen({ navigation }) {
+	const insets = useSafeAreaInsets();
 	const [campaigns, setCampaigns] = useState([]);
 
 	const loadCampaigns = useCallback(async () => {
@@ -53,18 +63,17 @@ export default function CampaignsScreen({ navigation }) {
 
 	return (
 		<View style={styles.container}>
-			<View style={styles.header}>
-				<View>
-					{campaigns.length > 0 && (
-						<Text style={styles.subtitle}>{getSubtitle()}</Text>
-					)}
-				</View>
+			<View style={[styles.header, { paddingTop: insets.top + 12 }]}>
 				<TouchableOpacity
 					style={styles.addBtn}
 					onPress={() => navigation.navigate("CreateCampaign")}
 				>
 					<Text style={styles.addBtnText}>+ New</Text>
 				</TouchableOpacity>
+				{campaigns.length > 0 && (
+					<Text style={styles.subtitle}>{getSubtitle()}</Text>
+				)}
+				<NotificationBell />
 			</View>
 
 			<ScrollView contentContainerStyle={styles.scrollContent}>
@@ -85,9 +94,19 @@ export default function CampaignsScreen({ navigation }) {
 				)}
 
 				{active.length === 0 && completed.length === 0 && (
-					<Text style={styles.empty}>
-						No campaigns yet. Create your first one!
-					</Text>
+					<View style={styles.emptyWrap}>
+						<View style={styles.emptyIconWrap}>
+							<Ionicons
+								name="people-outline"
+								size={36}
+								color={colors.primary}
+							/>
+						</View>
+						<Text style={styles.emptyText}>No campaigns yet</Text>
+						<Text style={styles.emptySub}>
+							Tap + New to create your first one
+						</Text>
+					</View>
 				)}
 
 				<CampaignCalendar campaigns={active} />
@@ -105,8 +124,13 @@ const styles = StyleSheet.create({
 		justifyContent: "space-between",
 		alignItems: "center",
 		paddingHorizontal: 20,
-		paddingTop: 50,
 		paddingBottom: 12,
+	},
+	headerLeft: { flex: 1 },
+	headerRight: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 10,
 	},
 	subtitle: { fontSize: 16, color: colors.inactive, letterSpacing: 0.3 },
 	addBtn: {
@@ -134,11 +158,23 @@ const styles = StyleSheet.create({
 		marginBottom: 10,
 	},
 	cardWrap: { marginBottom: 8 },
-	empty: {
-		textAlign: "center",
-		color: colors.inactive,
-		marginTop: 60,
-		fontSize: 14,
+	emptyWrap: { alignItems: "center", marginTop: 80, gap: 10 },
+	emptyIconWrap: {
+		width: 72,
+		height: 72,
+		borderRadius: 20,
+		backgroundColor: colors.surface,
+		borderWidth: 1,
+		borderColor: colors.border,
+		alignItems: "center",
+		justifyContent: "center",
+		marginBottom: 8,
+	},
+	emptyText: {
+		fontSize: 16,
+		fontWeight: "700",
+		color: colors.text,
 		letterSpacing: 0.3,
 	},
+	emptySub: { fontSize: 13, color: colors.inactive, letterSpacing: 0.3 },
 });

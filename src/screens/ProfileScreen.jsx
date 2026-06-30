@@ -690,6 +690,7 @@ const styles = StyleSheet.create({
 		borderRadius: 14,
 		borderWidth: 1,
 		borderColor: colors.btnBorder,
+		marginTop:6
 	},
 	metricsBtnText: {
 		fontSize: 13,
