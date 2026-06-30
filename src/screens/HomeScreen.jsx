@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
 		color: colors.text,
 		letterSpacing: 0.3,
 	},
-	greetingName: { color: colors.primary },
+	greetingName: { color: colors.primary, textTransform:"capitalize" },
 	date: {
 		fontSize: 13,
 		color: colors.inactive,
