@@ -1,12 +1,13 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { Provider, useDispatch } from "react-redux";
+import { Provider, useDispatch, useSelector } from "react-redux";
 import { store } from "./src/store/store";
+import { setUser, clearUser } from "./src/store/authSlice";
 
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./src/firebase/firebaseConfig";
@@ -26,19 +27,24 @@ const Stack = createNativeStackNavigator();
 
 function AppNavigator() {
 	const dispatch = useDispatch();
-	const [user, setUser] = useState(null);
-	const [loading, setLoading] = useState(true);
+	const user = useSelector((state) => state.auth.user);
+	const loading = useSelector((state) => state.auth.loading);
 
 	useEffect(() => {
 		initDB().catch((e) => console.log("initDB error:", e));
 
 		const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-			setUser(firebaseUser);
-			setLoading(false);
-
-			
 			if (firebaseUser) {
+				dispatch(
+					setUser({
+						uid: firebaseUser.uid,
+						email: firebaseUser.email,
+						photoURL: firebaseUser.photoURL || null,
+					}),
+				);
 				dispatch(loadMetrics());
+			} else {
+				dispatch(clearUser());
 			}
 		});
 		return unsubscribe;
@@ -65,9 +71,7 @@ function AppNavigator() {
 			<Stack.Navigator screenOptions={{ headerShown: false }}>
 				{user ? (
 					<>
-						<Stack.Screen name="Main">
-							{() => <TabNavigator onLogout={() => setUser(null)} />}
-						</Stack.Screen>
+						<Stack.Screen name="Main" component={TabNavigator} />
 						<Stack.Screen
 							name="CreateCampaign"
 							component={CreateCampaignScreen}

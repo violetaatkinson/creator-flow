@@ -3,8 +3,10 @@ import { getDB } from "../database/db";
 import { auth } from "../firebase/firebaseConfig";
 
 export const loadMetrics = createAsyncThunk("metrics/load", async () => {
+	const uid = auth.currentUser?.uid;
+	if (!uid) return {};
+
 	const db = await getDB();
-	const uid = auth.currentUser.uid;
 	const data = await db.getAllAsync("SELECT * FROM metrics WHERE userId = ?", [
 		uid,
 	]);
@@ -17,13 +19,15 @@ export const loadMetrics = createAsyncThunk("metrics/load", async () => {
 export const saveMetrics = createAsyncThunk(
 	"metrics/save",
 	async ({ platform, followers }) => {
+		const uid = auth.currentUser?.uid;
+		if (!uid) throw new Error("No user logged in");
+
 		const db = await getDB();
-		const uid = auth.currentUser.uid;
 		await db.runAsync(
 			`INSERT INTO metrics (userId, platform, followers, updatedAt)
-		 VALUES (?, ?, ?, ?)
-		 ON CONFLICT(userId, platform) DO UPDATE SET
-		 followers=excluded.followers, updatedAt=excluded.updatedAt`,
+			 VALUES (?, ?, ?, ?)
+			 ON CONFLICT(userId, platform) DO UPDATE SET
+			 followers=excluded.followers, updatedAt=excluded.updatedAt`,
 			[uid, platform, followers, new Date().toISOString()],
 		);
 		return { platform, followers };

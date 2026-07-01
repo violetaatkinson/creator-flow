@@ -10,7 +10,7 @@ import NotificationScreen from "../screens/NotificationScreen";
 
 const Tab = createBottomTabNavigator();
 
-export default function TabNavigator({ onLogout }) {
+export default function TabNavigator() {
 	return (
 		<Tab.Navigator
 			screenOptions={{
@@ -56,14 +56,13 @@ export default function TabNavigator({ onLogout }) {
 			/>
 			<Tab.Screen
 				name="Profile"
+				component={ProfileScreen}
 				options={{
 					tabBarIcon: ({ color, size }) => (
 						<Ionicons name="person-outline" size={size} color={color} />
 					),
 				}}
-			>
-				{(props) => <ProfileScreen {...props} onLogout={onLogout} />}
-			</Tab.Screen>
+			/>
 			<Tab.Screen
 				name="Notifications"
 				component={NotificationScreen}

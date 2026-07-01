@@ -31,6 +31,8 @@ const PLATFORMS = [
 export default function ProfileScreen({ navigation }) {
 	const insets = useSafeAreaInsets();
 	const dispatch = useDispatch();
+
+	const user = useSelector((state) => state.auth.user);
 	const metricsData = useSelector((state) => state.metrics.data);
 
 	const [name, setName] = useState("");
@@ -55,7 +57,8 @@ export default function ProfileScreen({ navigation }) {
 	useEffect(() => {
 		const loadProfile = async () => {
 			try {
-				const uid = auth.currentUser.uid;
+				const uid = user?.uid;
+				if (!uid) return;
 				const db = await getDB();
 				const profile = await db.getFirstAsync(
 					"SELECT * FROM users WHERE uid = ?",
@@ -78,9 +81,28 @@ export default function ProfileScreen({ navigation }) {
 		};
 		loadProfile();
 		dispatch(loadMetrics());
-	}, []);
+	}, [user]);
 
-	const pickImage = async () => {
+	const openCamera = async () => {
+		const { status } = await ImagePicker.requestCameraPermissionsAsync();
+		if (status !== "granted") {
+			showError("Please allow camera access.");
+			return;
+		}
+		const result = await ImagePicker.launchCameraAsync({
+			mediaTypes: ImagePicker.MediaTypeOptions.Images,
+			allowsEditing: true,
+			aspect: [1, 1],
+			quality: 0.3,
+			base64: true,
+		});
+		if (!result.canceled) {
+			const photo = `data:image/jpeg;base64,${result.assets[0].base64}`;
+			setPhotoUri(photo);
+		}
+	};
+
+	const openGallery = async () => {
 		const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 		if (status !== "granted") {
 			showError("Please allow access to your photo library.");
@@ -90,14 +112,19 @@ export default function ProfileScreen({ navigation }) {
 			mediaTypes: ImagePicker.MediaTypeOptions.Images,
 			allowsEditing: true,
 			aspect: [1, 1],
-			quality: 0.7,
+			quality: 0.3,
+			base64: true,
 		});
-		if (!result.canceled) setPhotoUri(result.assets[0].uri);
+		if (!result.canceled) {
+			const photo = `data:image/jpeg;base64,${result.assets[0].base64}`;
+			setPhotoUri(photo);
+		}
 	};
 
 	const handleSave = async () => {
 		try {
-			const uid = auth.currentUser.uid;
+			const uid = user?.uid;
+			if (!uid) return;
 			const db = await getDB();
 			await db.runAsync(
 				`INSERT INTO users (uid, name, handle, bio, instagram, tiktok, youtube, photoUri, updatedAt)
@@ -167,10 +194,7 @@ export default function ProfileScreen({ navigation }) {
 			</View>
 
 			<View style={styles.avatarSection}>
-				<TouchableOpacity
-					style={styles.avatarWrap}
-					onPress={editing ? pickImage : null}
-				>
+				<View style={styles.avatarWrap}>
 					{photoUri ? (
 						<Image source={{ uri: photoUri }} style={styles.avatar} />
 					) : (
@@ -179,11 +203,23 @@ export default function ProfileScreen({ navigation }) {
 						</View>
 					)}
 					{editing && (
-						<View style={styles.avatarOverlay}>
-							<Ionicons name="camera-outline" size={20} color="#fff" />
+						<View style={styles.avatarBtns}>
+							<TouchableOpacity
+								style={styles.avatarActionBtn}
+								onPress={openCamera}
+							>
+								<Ionicons name="camera-outline" size={16} color={colors.text} />
+							</TouchableOpacity>
+							<TouchableOpacity
+								style={styles.avatarActionBtn}
+								onPress={openGallery}
+							>
+								<Ionicons name="images-outline" size={16} color={colors.text} />
+							</TouchableOpacity>
 						</View>
 					)}
-				</TouchableOpacity>
+				</View>
+
 				{name && !editing ? (
 					<View style={styles.profileInfo}>
 						<Text style={styles.profileName}>{name}</Text>
@@ -191,7 +227,7 @@ export default function ProfileScreen({ navigation }) {
 						{bio ? <Text style={styles.profileBio}>{bio}</Text> : null}
 					</View>
 				) : (
-					<Text style={styles.email}>{auth.currentUser?.email}</Text>
+					<Text style={styles.email}>{user?.email}</Text>
 				)}
 			</View>
 
@@ -330,7 +366,7 @@ export default function ProfileScreen({ navigation }) {
 									</Text>
 									<Ionicons
 										name="open-outline"
-										size={14}
+										size={12}
 										color={colors.inactive}
 									/>
 								</View>
@@ -407,18 +443,18 @@ export default function ProfileScreen({ navigation }) {
 						onPress={() => setEditing(true)}
 					>
 						<Ionicons name="pencil-outline" size={16} color={colors.primary} />
-						<Text style={styles.btnEditText}>Edit Profile</Text>
+						<Text style={styles.btnEditText}>Edit profile</Text>
 					</TouchableOpacity>
 					<TouchableOpacity style={styles.btnLogout} onPress={handleLogout}>
 						<Ionicons name="log-out-outline" size={16} color={colors.paused} />
-						<Text style={styles.btnLogoutText}>Sign Out</Text>
+						<Text style={styles.btnLogoutText}>Sign out</Text>
 					</TouchableOpacity>
 				</View>
 			)}
 
 			<SuccessModal
 				visible={successVisible}
-				message="Your profile has been updated."
+				message="Profile updated!"
 				onClose={() => setSuccessVisible(false)}
 			/>
 			<ErrorModal
@@ -439,8 +475,8 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 20,
 		paddingBottom: 12,
 	},
-	avatarSection: { alignItems: "center", paddingVertical: 16, gap: 10 },
-	avatarWrap: { position: "relative" },
+	avatarSection: { alignItems: "center", paddingVertical: 24, gap: 10 },
+	avatarWrap: { alignItems: "center", gap: 10 },
 	avatar: {
 		width: 90,
 		height: 90,
@@ -464,14 +500,14 @@ const styles = StyleSheet.create({
 		color: colors.primary,
 		letterSpacing: 0.3,
 	},
-	avatarOverlay: {
-		position: "absolute",
-		bottom: 0,
-		right: 0,
-		width: 28,
-		height: 28,
-		borderRadius: 14,
-		backgroundColor: colors.active,
+	avatarBtns: { flexDirection: "row", gap: 8 },
+	avatarActionBtn: {
+		width: 38,
+		height: 38,
+		borderRadius: 10,
+		backgroundColor: colors.surface,
+		borderWidth: 1,
+		borderColor: colors.border,
 		alignItems: "center",
 		justifyContent: "center",
 	},
@@ -495,7 +531,6 @@ const styles = StyleSheet.create({
 		letterSpacing: 0.3,
 		textAlign: "center",
 		marginTop: 2,
-		marginBottom: 4,
 		paddingHorizontal: 20,
 		fontStyle: "italic",
 		textTransform: "capitalize",
@@ -528,12 +563,6 @@ const styles = StyleSheet.create({
 		color: colors.inactive,
 		textTransform: "uppercase",
 		letterSpacing: 0.6,
-	},
-	fieldValue: {
-		fontSize: 14,
-		color: colors.text,
-		fontWeight: "500",
-		letterSpacing: 0.3,
 	},
 	fieldInput: {
 		fontSize: 14,
@@ -635,11 +664,7 @@ const styles = StyleSheet.create({
 		color: colors.paused,
 		letterSpacing: 0.3,
 	},
-	metricToggle: {
-		flexDirection: "row",
-		gap: 8,
-		marginBottom: 12,
-	},
+	metricToggle: { flexDirection: "row", gap: 8, marginBottom: 12 },
 	metricToggleBtn: {
 		width: 44,
 		height: 44,
@@ -686,7 +711,6 @@ const styles = StyleSheet.create({
 		borderRadius: 14,
 		borderWidth: 1,
 		borderColor: colors.btnBorder,
-		marginTop: 6,
 	},
 	metricsBtnText: {
 		fontSize: 13,
