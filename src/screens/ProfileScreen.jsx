@@ -443,11 +443,11 @@ export default function ProfileScreen({ navigation }) {
 						onPress={() => setEditing(true)}
 					>
 						<Ionicons name="pencil-outline" size={16} color={colors.primary} />
-						<Text style={styles.btnEditText}>Edit profile</Text>
+						<Text style={styles.btnEditText}>Edit Profile</Text>
 					</TouchableOpacity>
 					<TouchableOpacity style={styles.btnLogout} onPress={handleLogout}>
 						<Ionicons name="log-out-outline" size={16} color={colors.paused} />
-						<Text style={styles.btnLogoutText}>Sign out</Text>
+						<Text style={styles.btnLogoutText}>Sign Out</Text>
 					</TouchableOpacity>
 				</View>
 			)}
@@ -711,6 +711,7 @@ const styles = StyleSheet.create({
 		borderRadius: 14,
 		borderWidth: 1,
 		borderColor: colors.btnBorder,
+		marginTop:6
 	},
 	metricsBtnText: {
 		fontSize: 13,

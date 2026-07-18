@@ -58,8 +58,6 @@ https://github.com/violetaatkinson/creator-flow
 - SQLite
 - Async Storage
 - Expo Camera
-- Expo Location
-- Google Maps Static API
 - Yup
 - FlatList
 

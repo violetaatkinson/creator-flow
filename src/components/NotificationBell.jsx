@@ -1,25 +1,34 @@
 import { TouchableOpacity, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-import { useEffect, useState } from "react";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
-import { db, auth } from "../firebase/firebaseConfig";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useCallback, useState } from "react";
+import { getDB } from "../database/db";
+import { auth } from "../firebase/firebaseConfig";
 import { colors } from "../constants/colors";
 
 export default function NotificationBell() {
 	const navigation = useNavigation();
 	const [hasUnread, setHasUnread] = useState(false);
 
-	useEffect(() => {
-		const q = query(
-			collection(db, "notifications"),
-			where("userId", "==", auth.currentUser.uid),
-			where("read", "==", false),
-		);
-		return onSnapshot(q, (snap) => {
-			setHasUnread(snap.docs.length > 0);
-		});
-	}, []);
+	useFocusEffect(
+		useCallback(() => {
+			const checkUnread = async () => {
+				try {
+					const db = await getDB();
+					const uid = auth.currentUser?.uid;
+					if (!uid) return;
+					const result = await db.getFirstAsync(
+						"SELECT id FROM notifications WHERE userId = ? AND read = 0 LIMIT 1",
+						[uid],
+					);
+					setHasUnread(!!result);
+				} catch (e) {
+					console.log("NotificationBell error:", e);
+				}
+			};
+			checkUnread();
+		}, []),
+	);
 
 	return (
 		<TouchableOpacity

@@ -1,142 +1,169 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
-import { useState, useCallback } from "react";
-import { useFocusEffect } from "@react-navigation/native";
+import {View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import { useState } from "react";
 import { getDB } from "../database/db";
 import { auth } from "../firebase/firebaseConfig";
+import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../constants/colors";
-import CampaignCard from "../components/CampaignCard";
-import CampaignCalendar from "../components/CampaignCalendar";
-import CampaignHistory from "../components/CampaignHistory";
+import FormInput from "../components/FormInput";
+import OptionSelector from "../components/OptionSelector";
+import ErrorModal from "../components/ErrorModal";
+import { createNotification } from "../services/notificationService";
 
-export default function CampaignsScreen({ navigation }) {
-	const [campaigns, setCampaigns] = useState([]);
+const PLATFORMS = ["Instagram", "TikTok", "YouTube"];
+const TYPES = ["Post", "Reel", "Story", "Live", "Video"];
+const STATUSES = ["Pending", "Active", "Paused", "Completed"];
 
-	const loadCampaigns = useCallback(async () => {
+export default function CreateCampaignScreen({ navigation }) {
+	const [brand, setBrand] = useState("");
+	const [platform, setPlatform] = useState("Instagram");
+	const [type, setType] = useState("Post");
+	const [date, setDate] = useState("");
+	const [payment, setPayment] = useState("");
+	const [status, setStatus] = useState("Pending");
+	const [errorVisible, setErrorVisible] = useState(false);
+	const [errorMessage, setErrorMessage] = useState("");
+
+	const showError = (message) => {
+		setErrorMessage(message);
+		setErrorVisible(true);
+	};
+
+	const handleCreate = async () => {
+		if (!brand || !date || !payment || !type || !platform) {
+			showError("Complete all fields to continue.");
+			return;
+		}
 		try {
 			const db = await getDB();
 			const uid = auth.currentUser.uid;
-			const data = await db.getAllAsync(
-				"SELECT * FROM campaigns WHERE userId = ? ORDER BY createdAt DESC",
-				[uid],
+			const brandFormatted = brand.charAt(0).toUpperCase() + brand.slice(1);
+			const createdAt = new Date().toISOString();
+
+			const result = await db.runAsync(
+				`INSERT INTO campaigns (userId, brand, platform, type, date, payment, status, createdAt)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+				[
+					uid,
+					brandFormatted,
+					platform,
+					type,
+					date,
+					Number(payment),
+					status,
+					createdAt,
+				],
 			);
-			setCampaigns(data);
-		} catch (e) {
-			console.log("Error loading campaigns:", e);
+
+			await createNotification({
+				userId: uid,
+				type: "campaign_created",
+				message: "New Campaign",
+				detail: brandFormatted,
+				amount: Number(payment),
+				campaignId: result.lastInsertRowId,
+			});
+
+			navigation.goBack();
+		} catch (error) {
+			showError(error.message);
 		}
-	}, []);
-
-	useFocusEffect(loadCampaigns);
-
-	const handleEdit = useCallback((item) => {
-		navigation.navigate("EditCampaign", { campaign: item });
-	}, []);
-
-	const active = campaigns.filter((c) => c.status !== "Completed");
-	const completed = campaigns.filter((c) => c.status === "Completed");
-
-	const getSubtitle = () => {
-		const parts = [];
-		const activeCount = campaigns.filter((c) => c.status === "Active").length;
-		const pendingCount = campaigns.filter((c) => c.status === "Pending").length;
-		const pausedCount = campaigns.filter((c) => c.status === "Paused").length;
-		const completedCount = completed.length;
-
-		if (activeCount) parts.push(`${activeCount} active`);
-		if (pendingCount) parts.push(`${pendingCount} pending`);
-		if (pausedCount) parts.push(`${pausedCount} paused`);
-		if (completedCount) parts.push(`${completedCount} completed`);
-
-		return parts.join(" · ");
 	};
 
 	return (
-		<View style={styles.container}>
-			<View style={styles.header}>
-				<View>
-					{campaigns.length > 0 && (
-						<Text style={styles.subtitle}>{getSubtitle()}</Text>
-					)}
-				</View>
-				<TouchableOpacity
-					style={styles.addBtn}
-					onPress={() => navigation.navigate("CreateCampaign")}
-				>
-					<Text style={styles.addBtnText}>+ New</Text>
+		<ScrollView style={styles.container} contentContainerStyle={styles.content}>
+			<View style={styles.titleRow}>
+				<TouchableOpacity onPress={() => navigation.goBack()}>
+					<Ionicons name="chevron-back" size={26} color={colors.text} />
 				</TouchableOpacity>
+				<Text style={styles.title}>New Campaign</Text>
+				<View style={{ width: 26 }} />
 			</View>
 
-			<ScrollView contentContainerStyle={styles.scrollContent}>
-				{active.length > 0 && (
-					<View style={styles.section}>
-						<Text style={styles.sectionTitle}>Active</Text>
-						{active.map((item, index) => (
-							<View key={item.id} style={styles.cardWrap}>
-								<CampaignCard
-									item={item}
-									index={index}
-									onEdit={handleEdit}
-									onUpdate={loadCampaigns}
-								/>
-							</View>
-						))}
-					</View>
-				)}
+			<FormInput
+				label="Brand"
+				placeholder="e.g. Nike"
+				value={brand}
+				onChangeText={setBrand}
+			/>
+			<Text style={styles.label}>Platform</Text>
+			<OptionSelector
+				options={PLATFORMS}
+				selected={platform}
+				onSelect={setPlatform}
+			/>
+			<Text style={styles.label}>Content type</Text>
+			<OptionSelector options={TYPES} selected={type} onSelect={setType} />
+			<FormInput
+				label="Date"
+				placeholder="e.g. 10 Apr"
+				value={date}
+				onChangeText={setDate}
+			/>
+			<FormInput
+				label="Payment ($)"
+				placeholder="e.g. 500"
+				value={payment}
+				onChangeText={setPayment}
+				keyboardType="numeric"
+			/>
+			<Text style={styles.label}>Status</Text>
+			<OptionSelector
+				options={STATUSES}
+				selected={status}
+				onSelect={setStatus}
+			/>
 
-				{active.length === 0 && completed.length === 0 && (
-					<Text style={styles.empty}>
-						No campaigns yet. Create your first one!
-					</Text>
-				)}
+			<TouchableOpacity style={styles.btn} onPress={handleCreate}>
+				<Text style={styles.btnText}>Create Campaign</Text>
+			</TouchableOpacity>
 
-				<CampaignCalendar campaigns={active} />
-
-				{completed.length > 0 && <CampaignHistory campaigns={completed} />}
-			</ScrollView>
-		</View>
+			<ErrorModal
+				visible={errorVisible}
+				message={errorMessage}
+				onClose={() => setErrorVisible(false)}
+			/>
+		</ScrollView>
 	);
 }
 
 const styles = StyleSheet.create({
 	container: { flex: 1, backgroundColor: colors.backgroundScreen },
-	header: {
+	content: { padding: 24, paddingTop: 60, paddingBottom: 60 },
+	titleRow: {
 		flexDirection: "row",
-		justifyContent: "space-between",
 		alignItems: "center",
-		paddingHorizontal: 20,
-		paddingTop: 50,
-		paddingBottom: 12,
+		justifyContent: "space-between",
+		marginBottom: 32,
 	},
-	subtitle: { fontSize: 16, color: colors.inactive, letterSpacing: 0.3 },
-	addBtn: {
-		backgroundColor: colors.backgroundBtn,
-		borderRadius: 20,
-		paddingHorizontal: 16,
-		paddingVertical: 8,
-		borderWidth: 1,
-		borderColor: colors.btnBorder,
-	},
-	addBtnText: {
-		color: colors.active,
-		fontWeight: "700",
-		fontSize: 14,
+	title: {
+		fontSize: 24,
+		fontWeight: "800",
+		color: colors.text,
 		letterSpacing: 0.3,
 	},
-	scrollContent: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 40 },
-	section: { marginBottom: 12 },
-	sectionTitle: {
-		fontSize: 11,
+	label: {
+		fontSize: 12,
 		fontWeight: "600",
 		color: colors.inactive,
 		textTransform: "uppercase",
 		letterSpacing: 0.8,
-		marginBottom: 10,
+		marginBottom: 8,
 	},
-	cardWrap: { marginBottom: 8 },
-	empty: {
-		textAlign: "center",
-		color: colors.inactive,
-		marginTop: 60,
-		fontSize: 14,
+	btn: {
+		width: "100%",
+		height: 62,
+		backgroundColor: colors.backgroundBtn,
+		borderRadius: 20,
+		alignItems: "center",
+		justifyContent: "center",
+		borderWidth: 1,
+		borderColor: colors.btnBorder,
+		marginTop: 16,
+	},
+	btnText: {
+		fontSize: 16,
+		fontWeight: "600",
+		color: colors.active,
 		letterSpacing: 0.3,
 	},
 });

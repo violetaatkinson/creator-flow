@@ -48,19 +48,6 @@ export default function CampaignsScreen({ navigation }) {
 	const active = campaigns.filter((c) => c.status !== "Completed");
 	const completed = campaigns.filter((c) => c.status === "Completed");
 
-	const getSubtitle = () => {
-		const parts = [];
-		const activeCount = campaigns.filter((c) => c.status === "Active").length;
-		const pendingCount = campaigns.filter((c) => c.status === "Pending").length;
-		const pausedCount = campaigns.filter((c) => c.status === "Paused").length;
-		const completedCount = completed.length;
-		if (activeCount) parts.push(`${activeCount} active`);
-		if (pendingCount) parts.push(`${pendingCount} pending`);
-		if (pausedCount) parts.push(`${pausedCount} paused`);
-		if (completedCount) parts.push(`${completedCount} completed`);
-		return parts.join(" · ");
-	};
-
 	return (
 		<View style={styles.container}>
 			<View style={[styles.header, { paddingTop: insets.top + 12 }]}>
@@ -70,9 +57,6 @@ export default function CampaignsScreen({ navigation }) {
 				>
 					<Text style={styles.addBtnText}>+ New</Text>
 				</TouchableOpacity>
-				{campaigns.length > 0 && (
-					<Text style={styles.subtitle}>{getSubtitle()}</Text>
-				)}
 				<NotificationBell />
 			</View>
 
