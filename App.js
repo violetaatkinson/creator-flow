@@ -39,7 +39,6 @@ function AppNavigator() {
 					setUser({
 						uid: firebaseUser.uid,
 						email: firebaseUser.email,
-						photoURL: firebaseUser.photoURL || null,
 					}),
 				);
 				dispatch(loadMetrics());

@@ -91,7 +91,7 @@ export default function NotificationScreen() {
 			<View style={[styles.header, { paddingTop: insets.top + 12 }]}>
 				{notifications.length > 0 && (
 					<TouchableOpacity onPress={clearAll}>
-						<Text style={styles.clearAll}>Clear all</Text>
+						<Text style={styles.clearAll}>Clear All</Text>
 					</TouchableOpacity>
 				)}
 			</View>
