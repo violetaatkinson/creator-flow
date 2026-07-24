@@ -9,137 +9,208 @@
 </p>
 
 <p align="center">
-  Mobile app built with <strong>React Native</strong> & <strong>Expo</strong> for influencer campaign management.
+  A mobile application built with <strong>React Native</strong> and <strong>Expo</strong> to help influencers and content creators manage brand collaborations, finances, and performance metrics.
 </p>
 
 <p align="center">
   <img src="./src/assets/inicio.png" width="280" alt="Creator Flow App"/>
 </p>
 
-Creator Flow es una aplicación móvil desarrollada con **React Native y Expo**, diseñada para ayudar a creadores de contenido e influencers a gestionar todas sus colaboraciones con marcas desde un solo lugar. La aplicación permite administrar campañas, controlar ingresos y gastos, visualizar métricas, organizar fechas importantes y acceder rápidamente a las principales plataformas sociales.
+---
 
-## 📂 Código fuente
+# 📱 About the Project
+
+**Creator Flow** is a mobile application developed with **React Native and Expo**, designed to help content creators and influencers manage their entire creator business from one centralized platform.
+
+The application allows users to organize brand collaborations, track campaign progress, manage income and expenses, visualize performance metrics, receive notifications, and maintain important creator information.
+
+The goal of Creator Flow is to simplify the workflow of digital creators by combining campaign management and financial tracking into a modern, intuitive mobile experience.
+
+---
+
+# 📂 Source Code
+
+Repository:
 
 https://github.com/violetaatkinson/creator-flow
 
 ---
 
-## ✨ Características principales
+# ✨ Main Features
 
-- 📋 Creación y gestión completa de campañas.
-- ✏️ Edición de campañas (fechas, presupuesto, plataforma y estado).
-- 📅 Calendario con próximos deadlines.
-- 📚 Historial de campañas completadas.
-- 💰 Panel financiero con ingresos mensuales.
-- 📉 Registro de gastos y cálculo automático de ganancias netas.
-- 📊 Estadísticas mensuales de campañas e ingresos.
-- 👤 Perfil personalizable con foto y alias.
-- 📥 Descarga de reportes mensuales, semestrales y anuales.
-- 📱 Registro manual de seguidores por plataforma.
-- 🔗 Acceso directo a redes sociales.
-- 🏠 Dashboard con resumen completo de la actividad.
-- 📈 Gráfico anual de campañas.
-- 🔔 Centro de notificaciones para campañas, pagos y gastos.
+## 📋 Campaign Management
 
----
+* Create and manage brand collaboration campaigns.
+* Edit campaign details such as:
 
-## 🛠️ Tecnologías utilizadas
+  * Brand name
+  * Platform
+  * Budget
+  * Deadlines
+  * Campaign status
+* Track active, pending, completed, and paused campaigns.
+* View upcoming deadlines.
 
-- React Native
-- Expo
-- React Navigation
-- JavaScript ES6+
-- React Hooks
-- Redux Toolkit
-- Redux Persist
-- RTK Query
-- Firebase Authentication
-- Firebase Firestore
-- SQLite
-- Async Storage
-- Expo Camera
-- Yup
-- FlatList
+## 💰 Financial Dashboard
 
----
+* Track creator income.
+* Register expenses.
+* Calculate net earnings.
+* View monthly financial summaries.
+* Generate financial reports.
 
-## 📚 Conceptos aplicados del curso
+## 📊 Analytics & Performance
 
-### 📦 Módulo 1 – Fundamentos de React Native
+* Campaign statistics.
+* Annual campaign charts.
+* Income visualization.
+* Creator performance tracking.
 
-- Configuración del entorno con Expo.
-- Creación del proyecto.
-- Configuración del emulador Android.
-- Introducción a React Native.
-- Ejecución y visualización de la aplicación.
+## 👤 Creator Profile
 
-### 🎨 Módulo 2 – Props, State y Diseño Responsive
+* Customizable user profile.
+* Profile image management.
+* Creator alias.
+* Social media information.
 
-- Manejo de Props y State.
-- Renderizado condicional.
-- Flexbox y diseño responsive.
-- Validación de formularios.
-- Comunicación entre componentes.
-- Safe Areas e imágenes.
+## 🔔 Notifications
 
-### 🧭 Módulo 3 – Navegación
+* Campaign reminders.
+* Payment notifications.
+* Expense alerts.
 
-- Stack Navigation.
-- Bottom Tabs.
-- Paso de parámetros entre pantallas.
-- Navegación con React Navigation.
-- Personalización de Headers.
-- Arquitectura de navegación.
+## 📱 Social Media Management
 
-### 🏗️ Módulo 4 – Arquitectura
-
-- Organización del proyecto.
-- Separación de componentes.
-- Constantes globales.
-- FlatList.
-- Renderizado dinámico.
-- Integración de datasets.
-
-### ⚡ Módulo 5 – Eventos y Estado
-
-- Eventos de interacción.
-- useState.
-- Modales.
-- Confirmaciones.
-- Optimización de listas.
-- Gestión dinámica de campañas.
-
-### 💾 Módulo 6 – Persistencia
-
-- SQLite.
-- Async Storage.
-- Persistencia de sesión.
-- Logout.
-- Expo Location.
-- Geocoding.
-- Google Maps Static API.
-
-### 🌍 Módulo 7 – Estado Global y Backend
-
-- Redux Toolkit.
-- Redux Persist.
-- RTK Query.
-- Firebase Firestore.
-- Estado global para campañas, finanzas y perfil.
-
-### 🔐 Módulo 8 – Autenticación y Perfil
-
-- Firebase Authentication.
-- Registro e inicio de sesión.
-- Validación con Yup.
-- Navegación protegida.
-- Cámara.
-- Gestión de imágenes de perfil.
-- Persistencia del usuario autenticado.
+* Manual follower tracking.
+* Quick access to social media platforms.
 
 ---
 
-## 📂 Estructura del proyecto
+# 🛠️ Technologies Used
+
+### Frontend
+
+* React Native
+* Expo
+* JavaScript ES6+
+* React Navigation
+* React Hooks
+* FlatList
+
+### State Management
+
+* Redux Toolkit
+* Redux Persist
+* RTK Query
+
+### Backend & Database
+
+* Firebase Authentication
+* Firebase Firestore
+* SQLite
+* Async Storage
+
+### Additional Libraries
+
+* Expo Camera
+* Yup
+* Expo Location
+* Google Maps Static API
+
+---
+
+# 📚 React Native Concepts Applied
+
+## 📦 Module 1 – React Native Fundamentals
+
+* Expo environment configuration.
+* React Native project creation.
+* Android emulator setup.
+* Component-based architecture.
+* Running and testing the application.
+
+---
+
+## 🎨 Module 2 – Props, State & Responsive Design
+
+* Props and state management.
+* Conditional rendering.
+* Flexbox layouts.
+* Responsive mobile design.
+* Form validation.
+* Component communication.
+* Safe Areas and image handling.
+
+---
+
+## 🧭 Module 3 – Navigation
+
+* Stack Navigation.
+* Bottom Tab Navigation.
+* Navigation parameters.
+* Protected routes.
+* Custom headers.
+* Navigation architecture.
+
+---
+
+## 🏗️ Module 4 – Application Architecture
+
+* Project organization.
+* Component separation.
+* Global constants.
+* Dynamic lists with FlatList.
+* Data rendering.
+
+---
+
+## ⚡ Module 5 – Events & Application State
+
+* User interaction events.
+* useState management.
+* Modal components.
+* Confirmation dialogs.
+* Dynamic campaign management.
+
+---
+
+## 💾 Module 6 – Data Persistence
+
+* SQLite integration.
+* Async Storage.
+* Session persistence.
+* User logout functionality.
+* Location services.
+
+---
+
+## 🌍 Module 7 – Global State & Backend Integration
+
+* Redux Toolkit implementation.
+* Redux Persist.
+* RTK Query.
+* Firebase Firestore integration.
+* Global state management for:
+
+  * Campaigns
+  * Finances
+  * User profile
+
+---
+
+## 🔐 Module 8 – Authentication & User Profile
+
+* Firebase Authentication.
+* User registration and login.
+* Yup validation schemas.
+* Protected navigation.
+* Camera integration.
+* Profile image management.
+* Persistent authentication sessions.
+
+---
+
+# 📂 Project Structure
 
 ```text
 creator-flow/
@@ -166,14 +237,83 @@ creator-flow/
 
 ---
 
-## 🎯 Objetivo del proyecto
+# 📱 Installation & Testing
 
-Desarrollar una aplicación móvil completa para creadores de contenido, aplicando los principales conceptos de React Native, navegación, estado global, persistencia de datos y autenticación. El proyecto busca ofrecer una herramienta que centralice la gestión de campañas, el control financiero y el seguimiento del rendimiento de un influencer mediante una interfaz intuitiva, moderna y optimizada para dispositivos móviles.
+## Android APK
+
+Creator Flow includes an Android test build generated with **Expo Application Services (EAS)**.
+
+Test build:
+
+https://expo.dev/accounts/violeatkin/projects/creator-flow/builds/687bfa77-7b35-440c-be95-2f43d6b1fb3f
+
+To install:
+
+1. Open the build link on an Android device.
+2. Download the APK.
+3. Allow installation from unknown sources if requested.
+4. Install and open Creator Flow.
+
+The test build allows validation of:
+
+* User authentication.
+* Navigation flow.
+* Campaign management.
+* Financial features.
+* Firebase integration.
+* Data persistence.
 
 ---
 
-## 👩‍💻 Autora
+# 🧪 Development Testing
+
+Run the project locally:
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start Expo:
+
+```bash
+npx expo start
+```
+
+Run on Android emulator:
+
+```bash
+npx expo run:android
+```
+
+---
+
+# 🚀 Future Improvements
+
+* Google Play Store release.
+* Instagram API integration.
+* Automatic follower synchronization.
+* Creator marketplace.
+* Advanced analytics dashboard.
+* AI-powered campaign recommendations.
+* Push notifications.
+* Premium subscription plans.
+
+---
+
+# 🎯 Project Goal
+
+The objective of Creator Flow was to build a complete mobile application applying modern React Native development concepts, including navigation, state management, backend integration, authentication, and data persistence.
+
+The project demonstrates how mobile technology can help creators organize their professional workflow, manage collaborations, and make better financial decisions through a centralized platform.
+
+---
+
+# 👩‍💻 Author
 
 **Violeta Atkinson**
 
-Proyecto final desarrollado durante el curso **React Native - Coderhouse**.
+Final project developed during the **React Native Course - Coderhouse**.
+
+Technologies, architecture, and features were implemented as part of a complete mobile application development process.
