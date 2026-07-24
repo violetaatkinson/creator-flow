@@ -6,9 +6,17 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
+
     "ios": {
       "supportsTablet": true
     },
+
     "android": {
       "package": "com.violetaatkinson.creatorflow",
       "permissions": [
@@ -21,9 +29,11 @@
         "backgroundImage": "./assets/android-icon-background.png"
       }
     },
+
     "plugins": [
       "expo-font"
     ],
+
     "extra": {
       "eas": {
         "projectId": "b0ebb245-4713-48e7-af98-64378ceb1b6f"
